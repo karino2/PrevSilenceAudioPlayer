@@ -11,7 +11,7 @@ import java.util.List;
  * Created by karino on 1/12/15.
  */
 public class SilenceAnalyzer {
-    private int channelNum;
+    private int channelNum = 1;
 
     public void debugPrint() {
         Log.d("PrevSilence", "silent size: " + silentSectionList.size());
@@ -20,10 +20,19 @@ public class SilenceAnalyzer {
         }
     }
 
-    long lastAnalyzed;
+    long lastAnalyzedCount;
 
+    /*
+        this.sampleRate = sampleRate;
+        recalculateLastAnalyzedCount();
+        current = UsToSampleCount(currentUS);
+
+     */
     public void setChannelNum(int channelNum) {
+        long currentUS = sampleCountToUS(current);
         this.channelNum = channelNum;
+        recalculateLastAnalyzedCount();
+        current = UsToSampleCount(currentUS);
     }
 
     public int getChannelNum() {
@@ -35,9 +44,9 @@ public class SilenceAnalyzer {
         public long duration;
         public boolean isEnded;
 
-        SilentSection(long begin, long duration, boolean isEnded){
-            this.begin = begin;
-            this.duration = duration;
+        SilentSection(long beginCount, long durationCount, boolean isEnded){
+            this.begin =  sampleCountToUS(beginCount);
+            this.duration = sampleCountToUS(durationCount);
             this.isEnded = isEnded;
         }
 
@@ -58,35 +67,36 @@ public class SilenceAnalyzer {
     }
 
     public long getPreviousSilentEnd() {
-        return getPreviousSilentEnd(current);
+        return getPreviousSilentEnd(sampleCountToUS(current));
     }
 
-    final long MARGIN_COUNT = 2000;
+    final long MARGIN_NS = 100000;
 
-    // return samplecount. caller must convert to us.
-    public long getPreviousSilentEnd(long from) {
+    public long getPreviousSilentEnd(long fromUS) {
         if(silentSectionList.size() == 0)
             return 0;
         SilentSection prev = silentSectionList.get(0);
-        if(prev.getEnd() +MARGIN_COUNT > from)
+        if(prev.getEnd() + MARGIN_NS > fromUS)
             return 0;
         for(SilentSection cur : silentSectionList) {
-            if(cur.getEnd() +MARGIN_COUNT > from) {
-                return Math.max(0, prev.getEnd() - MARGIN_COUNT);
+            if(cur.getEnd() + MARGIN_NS > fromUS) {
+                return Math.max(0, prev.getEnd() - MARGIN_NS);
             }
             prev = cur;
         }
-        return Math.max(0, prev.getEnd() - MARGIN_COUNT);
+        return Math.max(0, prev.getEnd() - MARGIN_NS);
     }
 
 
 
-    // ex. 44100
-    int sampleRate;
+    int sampleRate = 44100;
 
 
     public void setSampleRate(int sampleRate) {
+        long currentUS = sampleCountToUS(current);
         this.sampleRate = sampleRate;
+        recalculateLastAnalyzedCount();
+        current = UsToSampleCount(currentUS);
     }
 
     public final long sampleCountToUS(long count) {
@@ -104,17 +114,22 @@ public class SilenceAnalyzer {
     }
 
     public void setDecodeBegin(long beginUS) {
-        // updateLastAnalyzed();
-        long newCount = UsToSampleCount(beginUS);
-        if(newCount > lastAnalyzed) {
-            Log.d("PrevSilence", "last, newCount: " + lastAnalyzed + ", " + newCount);
+        if(beginUS > lastAnalyzedUS) {
+            Log.d("PrevSilence", "last, newUS: " + lastAnalyzedUS + ", " + beginUS);
             throw new UnsupportedOperationException("seek forward is not yet supported");
         }
+        long newCount = UsToSampleCount(beginUS);
         current = newCount;
     }
 
+    void recalculateLastAnalyzedCount() {
+        lastAnalyzedCount = UsToSampleCount(lastAnalyzedUS);
+    }
+
+    long lastAnalyzedUS;
     private void updateLastAnalyzed() {
-        lastAnalyzed = Math.max(lastAnalyzed, current);
+        lastAnalyzedCount = Math.max(lastAnalyzedCount, current);
+        lastAnalyzedUS = sampleCountToUS(lastAnalyzedCount);
     }
 
     final long SILENCE_THRESHOLD = 100;
@@ -137,15 +152,15 @@ public class SilenceAnalyzer {
         // Assume oneSampleByteNum always 2 for a while, i.e. 16BIT PCM.
         int sampleLen = chunkLen/2;
 
-        if(current +sampleLen <= lastAnalyzed) {
+        if(current +sampleLen <= lastAnalyzedCount) {
             current += sampleLen;
             return;
         }
 
-        // current < lastAnalyzed < current+sampleLen
-        if(current < lastAnalyzed) {
-            begin = (int)(lastAnalyzed - current); // this must be smaller than sampleLen
-            current = lastAnalyzed;
+        // current < lastAnalyzedCount < current+sampleLen
+        if(current < lastAnalyzedCount) {
+            begin = (int)(lastAnalyzedCount - current); // this must be smaller than sampleLen
+            current = lastAnalyzedCount;
         }
 
 
@@ -160,8 +175,8 @@ public class SilenceAnalyzer {
         {
             SilentSection last = popFromList();
             insideSilence = true;
-            silenceBegin = last.begin;
-            duration = last.duration;
+            silenceBegin = UsToSampleCount(last.begin);
+            duration = UsToSampleCount(last.duration);
         }
 
         for(int i = begin; i < shorts.length; i++)
@@ -187,8 +202,9 @@ public class SilenceAnalyzer {
             }
 
             current++;
-            updateLastAnalyzed();
         }
+        updateLastAnalyzed();
+
         if(insideSilence) {
             silentSectionList.add(new SilentSection(silenceBegin, duration, false));
         }

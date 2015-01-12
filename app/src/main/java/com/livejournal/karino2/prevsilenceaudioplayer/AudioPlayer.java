@@ -40,16 +40,12 @@ public class AudioPlayer {
     boolean isRunning = false;
 
 
-    MediaExtractor extractor;
-    AudioTrack audioTrack;
-    MediaCodec codec;
-    SilenceAnalyzer analyzer;
+    PlayingState playingState;
     RestartListener listener;
 
     public AudioPlayer(RestartListener listener) {
-        extractor = new MediaExtractor();
-        analyzer = new SilenceAnalyzer();
         this.listener = listener;
+        playingState = new PlayingState();
     }
 
     String pendingNewFile;
@@ -67,28 +63,11 @@ public class AudioPlayer {
     }
 
     public void setAudioPath(String audioFilePath) throws IOException {
-        extractor.setDataSource(audioFilePath);
+        playingState.setAudioPath(audioFilePath);
     }
 
-    private void setupCodecAndOutputAudioTrack() throws IOException {
-        MediaFormat format = extractor.getTrackFormat(0);
-
-        // ex. 44100
-        int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
-        String mime = format.getString(MediaFormat.KEY_MIME);
-
-        int channelConfiguration = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT) == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO;
-
-        int minSize = AudioTrack.getMinBufferSize(sampleRate, channelConfiguration, AudioFormat.ENCODING_PCM_16BIT);
-        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelConfiguration,
-                AudioFormat.ENCODING_PCM_16BIT, minSize, AudioTrack.MODE_STREAM);
 
 
-        codec = MediaCodec.createDecoderByType(mime);
-        codec.configure(format, null, null, 0);
-        analyzer.setSampleRate(sampleRate);
-        analyzer.setChannelNum(channelConfiguration == AudioFormat.CHANNEL_OUT_MONO ? 1 : 2);
-    }
 
 
 
@@ -111,23 +90,20 @@ public class AudioPlayer {
         pendingCommandExists = false;
 
         try {
-            setupCodecAndOutputAudioTrack();
-
-            PlayingState playing = new PlayingState(extractor, codec, audioTrack, analyzer);
-            playing.prepare();
+            playingState.prepare();
 
             if(pendingSeekTo != -1)
             {
-                playing.seekTo(pendingSeekTo);
+                playingState.seekTo(pendingSeekTo);
                 pendingSeekTo = -1;
             }
 
 
-            while (!pendingCommandExists && !playing.isEnd()) {
-                playing.playOne();
+            while (!pendingCommandExists && !playingState.isEnd()) {
+                playingState.playOne();
             }
 
-            finalizeCodecAndOutputAudioTrack();
+            playingState.finishPlaying();
 
             // analyzer.debugPrint();
 
@@ -152,8 +128,8 @@ public class AudioPlayer {
             return ;
         }
         if(pendingCommand == Command.PREVIOUS) {
-            pendingSeekTo = analyzer.getPreviousSilentEnd();
-            Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
+            pendingSeekTo = playingState.getPreviousSilentEnd();
+            // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
             listener.requestRestart();
             return;
         }
@@ -162,17 +138,5 @@ public class AudioPlayer {
 
 
 
-    private void finalizeCodecAndOutputAudioTrack() {
-        if(codec != null) {
-            codec.stop();
-            codec.release();
-            codec = null;
-        }
-        if(audioTrack != null) {
-            audioTrack.flush();
-            audioTrack.release();
-            audioTrack = null;
-        }
-    }
 
 }

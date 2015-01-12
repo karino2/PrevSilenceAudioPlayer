@@ -1,11 +1,14 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
+import android.media.AudioFormat;
+import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.util.Log;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -18,13 +21,47 @@ public class PlayingState {
     MediaExtractor extractor;
     SilenceAnalyzer analyzer;
 
-    public PlayingState(MediaExtractor extractor1, MediaCodec codec1, AudioTrack audioTrack1, SilenceAnalyzer analyzer1) {
+    public PlayingState() {
+        extractor = new MediaExtractor();
+        analyzer = new SilenceAnalyzer();
+
+        /*
         extractor = extractor1;
         codec = codec1;
         audioTrack = audioTrack1;
         analyzer = analyzer1;
+        */
     }
 
+    public void setAudioPath(String audioFilePath) throws IOException {
+        extractor.setDataSource(audioFilePath);
+    }
+
+
+    private void setupCodecAndOutputAudioTrack() throws IOException {
+        MediaFormat format = extractor.getTrackFormat(0);
+
+        String mime = format.getString(MediaFormat.KEY_MIME);
+        codec = MediaCodec.createDecoderByType(mime);
+        codec.configure(format, null, null, 0);
+        updateFormat(format);
+
+
+    }
+
+    private void updateFormat(MediaFormat format) {
+        // ex. 44100
+        int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+        int channelConfiguration = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT) == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO;
+
+        int minSize = AudioTrack.getMinBufferSize(sampleRate, channelConfiguration, AudioFormat.ENCODING_PCM_16BIT);
+        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelConfiguration,
+                AudioFormat.ENCODING_PCM_16BIT, minSize, AudioTrack.MODE_STREAM);
+
+
+        analyzer.setSampleRate(sampleRate);
+        analyzer.setChannelNum(channelConfiguration == AudioFormat.CHANNEL_OUT_MONO ? 1 : 2);
+    }
 
 
     MediaCodec.BufferInfo info;
@@ -41,7 +78,9 @@ public class PlayingState {
 
     long currentPos = 0;
 
-    public void prepare() {
+    public void prepare() throws IOException {
+        setupCodecAndOutputAudioTrack();
+
         codec.start();
 
         audioTrack.play();
@@ -62,6 +101,28 @@ public class PlayingState {
         analyzer.clear();
         analyzer.setDecodeBegin(0);
     }
+
+    public long getPreviousSilentEnd() {
+        return analyzer.getPreviousSilentEnd();
+    }
+
+    public void finishPlaying() {
+        if(codec != null) {
+            codec.stop();
+            codec.release();
+            codec = null;
+        }
+        if(audioTrack != null) {
+            finalizeAudioTrack();
+            audioTrack = null;
+        }
+    }
+
+    private void finalizeAudioTrack() {
+        audioTrack.flush();
+        audioTrack.release();
+    }
+
 
     public boolean isEnd() {
         return outputDone || bufferingCount >= BUFFER_LIMIT;
@@ -97,15 +158,18 @@ public class PlayingState {
 
 
     long skipUntil = -1;
-    public void seekTo(long sampleCountTo) {
+    public void seekTo(long tillUS) {
         // long beforeST = extractor.getSampleTime();
 
-        skipUntil = sampleCountTo;
-        long tillUS = analyzer.sampleCountToUS(sampleCountTo);
+        skipUntil = analyzer.UsToSampleCount(tillUS);
         extractor.seekTo(tillUS, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
         long currentUS = extractor.getSampleTime();
         analyzer.setDecodeBegin(currentUS);
         currentPos = analyzer.UsToSampleCount(currentUS);
+
+        // should never happen, but occur sometime (why seekto go after tillUS?)
+        if(skipUntil < currentPos)
+            skipUntil = -1;
 
         // Log.d("PrevSilence", "afterSeek: " + currentPos + ", curUS: " + currentUS + ", beforeUS " + beforeST + ", tillUS+" + tillUS);
     }
@@ -155,12 +219,21 @@ public class PlayingState {
 
         } else if (res == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
             codecOutputBuffers = codec.getOutputBuffers();
+        } else if (res == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+            MediaFormat oformat = codec.getOutputFormat();
+            Log.d("PrevSilence", "output format has changed to " + oformat);
+            if(skipUntil != -1) {
+                Log.d("PrevSilence", "output format has changed during skip, not supported. just ignore skip");
+                skipUntil = -1;
+            }
+            finalizeAudioTrack();
+
+            long currentUS = analyzer.sampleCountToUS(currentPos);
+            updateFormat(oformat);
+            currentPos = analyzer.UsToSampleCount(currentUS);
+            audioTrack.play();
         } else {
             Log.d("PrevSilence", "ignoring dequeue buffer return: " + res);
-            if(res == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                MediaFormat oformat = codec.getOutputFormat();
-                Log.d("PrevSilence", "output format has changed to " + oformat);
-            }
         }
     }
 }
