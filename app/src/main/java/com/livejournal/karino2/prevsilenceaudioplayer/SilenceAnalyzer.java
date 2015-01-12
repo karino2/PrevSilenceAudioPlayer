@@ -11,6 +11,8 @@ import java.util.List;
  * Created by karino on 1/12/15.
  */
 public class SilenceAnalyzer {
+    private int channelNum;
+
     public void debugPrint() {
         Log.d("PrevSilence", "silent size: " + silentSectionList.size());
         for(SilentSection ss : silentSectionList) {
@@ -19,6 +21,14 @@ public class SilenceAnalyzer {
     }
 
     long lastAnalyzed;
+
+    public void setChannelNum(int channelNum) {
+        this.channelNum = channelNum;
+    }
+
+    public int getChannelNum() {
+        return channelNum;
+    }
 
     class SilentSection {
         public long begin;
@@ -51,20 +61,22 @@ public class SilenceAnalyzer {
         return getPreviousSilentEnd(current);
     }
 
+    final long MARGIN_COUNT = 2000;
+
     // return samplecount. caller must convert to us.
     public long getPreviousSilentEnd(long from) {
         if(silentSectionList.size() == 0)
             return 0;
         SilentSection prev = silentSectionList.get(0);
-        if(prev.getEnd() > from)
+        if(prev.getEnd() +MARGIN_COUNT > from)
             return 0;
         for(SilentSection cur : silentSectionList) {
-            if(cur.getEnd() > from) {
-                return prev.getEnd();
+            if(cur.getEnd() +MARGIN_COUNT > from) {
+                return Math.max(0, prev.getEnd() - MARGIN_COUNT);
             }
             prev = cur;
         }
-        return prev.getEnd();
+        return Math.max(0, prev.getEnd() - MARGIN_COUNT);
     }
 
 
@@ -72,17 +84,37 @@ public class SilenceAnalyzer {
     // ex. 44100
     int sampleRate;
 
+
     public void setSampleRate(int sampleRate) {
         this.sampleRate = sampleRate;
     }
 
+    public final long sampleCountToUS(long count) {
+        return count*1000000/(sampleRate*channelNum);
+    }
+
+    public final long UsToSampleCount(long us) {
+        return us*sampleRate*channelNum/1000000;
+    }
+
     long current = 0;
+
+    public long getCurrent() {
+        return current;
+    }
+
     public void setDecodeBegin(long beginUS) {
-        lastAnalyzed = Math.max(lastAnalyzed, current);
-        long newCount = beginUS*sampleRate/1000000;
-        if(newCount > lastAnalyzed)
+        // updateLastAnalyzed();
+        long newCount = UsToSampleCount(beginUS);
+        if(newCount > lastAnalyzed) {
+            Log.d("PrevSilence", "last, newCount: " + lastAnalyzed + ", " + newCount);
             throw new UnsupportedOperationException("seek forward is not yet supported");
+        }
         current = newCount;
+    }
+
+    private void updateLastAnalyzed() {
+        lastAnalyzed = Math.max(lastAnalyzed, current);
     }
 
     final long SILENCE_THRESHOLD = 100;
@@ -142,7 +174,7 @@ public class SilenceAnalyzer {
                 } else {
                     if(duration > MINIMUM_DURATION) {
                         silentSectionList.add(new SilentSection(silenceBegin, duration, true));
-                        Log.d("PrevSilence", "endSilence: " + current + ", " + shorts[i]);
+                        // Log.d("PrevSilence", "endSilence: " + current + ", " + shorts[i]);
                     }
                     silenceBegin = 0;
                     duration = 0;
@@ -155,6 +187,7 @@ public class SilenceAnalyzer {
             }
 
             current++;
+            updateLastAnalyzed();
         }
         if(insideSilence) {
             silentSectionList.add(new SilentSection(silenceBegin, duration, false));

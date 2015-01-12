@@ -30,6 +30,13 @@ public class PlayerActivity extends ActionBarActivity {
             }
         });
 
+        findViewById(R.id.buttonPrev).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PlayerService.startActionPrev(PlayerActivity.this);
+            }
+        });
+
 
     }
 

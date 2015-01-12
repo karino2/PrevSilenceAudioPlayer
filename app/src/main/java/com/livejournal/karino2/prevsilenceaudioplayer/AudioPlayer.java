@@ -87,6 +87,7 @@ public class AudioPlayer {
         codec = MediaCodec.createDecoderByType(mime);
         codec.configure(format, null, null, 0);
         analyzer.setSampleRate(sampleRate);
+        analyzer.setChannelNum(channelConfiguration == AudioFormat.CHANNEL_OUT_MONO ? 1 : 2);
     }
 
 
@@ -103,6 +104,8 @@ public class AudioPlayer {
         }
     }
 
+    long pendingSeekTo = -1;
+
     public void play() throws IOException {
         isRunning = true;
         pendingCommandExists = false;
@@ -112,6 +115,12 @@ public class AudioPlayer {
 
             PlayingState playing = new PlayingState(extractor, codec, audioTrack, analyzer);
             playing.prepare();
+
+            if(pendingSeekTo != -1)
+            {
+                playing.seekTo(pendingSeekTo);
+                pendingSeekTo = -1;
+            }
 
 
             while (!pendingCommandExists && !playing.isEnd()) {
@@ -143,7 +152,9 @@ public class AudioPlayer {
             return ;
         }
         if(pendingCommand == Command.PREVIOUS) {
-
+            pendingSeekTo = analyzer.getPreviousSilentEnd();
+            Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
+            listener.requestRestart();
             return;
         }
 

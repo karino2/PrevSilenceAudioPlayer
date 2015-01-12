@@ -39,7 +39,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="PREV"
-        android:id="@+id/button"
+        android:id="@+id/buttonPrev"
         android:layout_alignTop="@+id/buttonPlay"
         android:layout_centerHorizontal="true" />
 

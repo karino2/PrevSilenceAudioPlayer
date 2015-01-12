@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.Context;
 import android.os.*;
 import android.os.Process;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -88,6 +89,12 @@ public class PlayerService extends Service {
         return null;
     }
 
+    void showDebugMessage(String msg)
+    {
+        Log.d("PrevSilence", "DEB: " + msg);
+        showMessage(msg);
+    }
+
     void showMessage(String msg)
     {
         Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
@@ -108,7 +115,7 @@ public class PlayerService extends Service {
                 audioPlayer.playAudio(audioFilePath);
             }
         } catch (IOException e) {
-            showMessage("play fail: " + e.getMessage());
+            showDebugMessage("play fail: " + e.getMessage());
         }
     }
 
@@ -124,7 +131,7 @@ public class PlayerService extends Service {
                       handler.post(new Runnable() {
                           @Override
                           public void run() {
-                              showMessage("play throw exception: " + msg);
+                              showDebugMessage("play throw exception: " + msg);
                           }
                       });
                   }

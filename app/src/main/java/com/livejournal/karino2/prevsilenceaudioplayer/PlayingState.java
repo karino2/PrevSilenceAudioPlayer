@@ -3,6 +3,7 @@ package com.livejournal.karino2.prevsilenceaudioplayer;
 import android.media.AudioTrack;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
+import android.media.MediaFormat;
 import android.util.Log;
 
 import java.nio.ByteBuffer;
@@ -38,6 +39,8 @@ public class PlayingState {
     final long TIMEOUT = 1000; // us.
 
 
+    long currentPos = 0;
+
     public void prepare() {
         codec.start();
 
@@ -54,6 +57,7 @@ public class PlayingState {
         inputEnd = false;
 
         bufferingCount = 0;
+        currentPos = 0;
 
         analyzer.clear();
         analyzer.setDecodeBegin(0);
@@ -64,17 +68,49 @@ public class PlayingState {
     }
 
     private void outputPCM(MediaCodec.BufferInfo info, int outBufIndex, ByteBuffer outBuf) {
+        int chunkFrom = 0;
+
+        if(skipUntil != -1) {
+            chunkFrom = (int)(skipUntil - currentPos)*2; // this must be small because is already seeked.
+            // still skip.
+            if(chunkFrom > info.size) {
+                outBuf.clear();
+                codec.releaseOutputBuffer(outBufIndex, false);
+                currentPos += info.size/2;
+                return;
+            }
+            skipUntil = -1;
+        }
+
+
         byte[] chunk = new byte[info.size];
         outBuf.get(chunk);
         outBuf.clear();
         if (chunk.length > 0) {
-            audioTrack.write(chunk, 0, chunk.length);
+            audioTrack.write(chunk, chunkFrom, chunk.length-chunkFrom);
         }
 
         codec.releaseOutputBuffer(outBufIndex, false);
+        currentPos += info.size/2;
+
     }
 
-    private void pushToCodec(ByteBuffer[] codecInputBuffers) {
+
+    long skipUntil = -1;
+    public void seekTo(long sampleCountTo) {
+        // long beforeST = extractor.getSampleTime();
+
+        skipUntil = sampleCountTo;
+        long tillUS = analyzer.sampleCountToUS(sampleCountTo);
+        extractor.seekTo(tillUS, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
+        long currentUS = extractor.getSampleTime();
+        analyzer.setDecodeBegin(currentUS);
+        currentPos = analyzer.UsToSampleCount(currentUS);
+
+        // Log.d("PrevSilence", "afterSeek: " + currentPos + ", curUS: " + currentUS + ", beforeUS " + beforeST + ", tillUS+" + tillUS);
+    }
+
+    private void pushToCodec() {
         int inputBufIndex = codec.dequeueInputBuffer(TIMEOUT);
         if (inputBufIndex >= 0) {
             ByteBuffer dstBuf = codecInputBuffers[inputBufIndex];
@@ -82,8 +118,6 @@ public class PlayingState {
 
             int sampleSize = extractor.readSampleData(dstBuf, 0);
             if (sampleSize >= 0) {
-                // check silent here.
-
                 codec.queueInputBuffer(inputBufIndex, 0, sampleSize, presentTimeUS, 0);
                 extractor.advance();
             } else {
@@ -97,7 +131,7 @@ public class PlayingState {
         bufferingCount++;
 
         if (!inputEnd) {
-            pushToCodec(codecInputBuffers);
+            pushToCodec();
         }
 
         decodeAndOutput();
@@ -123,6 +157,10 @@ public class PlayingState {
             codecOutputBuffers = codec.getOutputBuffers();
         } else {
             Log.d("PrevSilence", "ignoring dequeue buffer return: " + res);
+            if(res == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                MediaFormat oformat = codec.getOutputFormat();
+                Log.d("PrevSilence", "output format has changed to " + oformat);
+            }
         }
     }
 }
