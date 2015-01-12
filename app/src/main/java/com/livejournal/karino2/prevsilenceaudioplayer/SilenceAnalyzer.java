@@ -14,25 +14,25 @@ public class SilenceAnalyzer {
     public void debugPrint() {
         Log.d("PrevSilence", "silent size: " + silentSectionList.size());
         for(SilentSection ss : silentSectionList) {
-            Log.d("PrevSilence", "ss: " + ss.silenceBeginSampleCount + ", " + ss.silenceDurationSampleCount + ", " + ss.isEnded);
+            Log.d("PrevSilence", "ss: " + ss.begin + ", " + ss.duration + ", " + ss.isEnded);
         }
     }
 
-    long lastAnalyzedSampleCount;
+    long lastAnalyzed;
 
     class SilentSection {
-        public long silenceBeginSampleCount;
-        public long silenceDurationSampleCount;
+        public long begin;
+        public long duration;
         public boolean isEnded;
 
         SilentSection(long begin, long duration, boolean isEnded){
-            silenceBeginSampleCount = begin;
-            silenceDurationSampleCount = duration;
+            this.begin = begin;
+            this.duration = duration;
             this.isEnded = isEnded;
         }
 
         public long getEnd() {
-            return silenceBeginSampleCount+silenceDurationSampleCount;
+            return begin + duration;
         }
     }
 
@@ -44,11 +44,11 @@ public class SilenceAnalyzer {
 
     public void clear() {
         silentSectionList.clear();
-        sampleCount = 0;
+        current = 0;
     }
 
     public long getPreviousSilentEnd() {
-        return getPreviousSilentEnd(sampleCount);
+        return getPreviousSilentEnd(current);
     }
 
     // return samplecount. caller must convert to us.
@@ -76,13 +76,13 @@ public class SilenceAnalyzer {
         this.sampleRate = sampleRate;
     }
 
-    long sampleCount = 0;
+    long current = 0;
     public void setDecodeBegin(long beginUS) {
-        lastAnalyzedSampleCount = Math.max(lastAnalyzedSampleCount, sampleCount);
+        lastAnalyzed = Math.max(lastAnalyzed, current);
         long newCount = beginUS*sampleRate/1000000;
-        if(newCount > lastAnalyzedSampleCount)
+        if(newCount > lastAnalyzed)
             throw new UnsupportedOperationException("seek forward is not yet supported");
-        sampleCount = newCount;
+        current = newCount;
     }
 
     final long SILENCE_THRESHOLD = 100;
@@ -105,15 +105,15 @@ public class SilenceAnalyzer {
         // Assume oneSampleByteNum always 2 for a while, i.e. 16BIT PCM.
         int sampleLen = chunkLen/2;
 
-        if(sampleCount+sampleLen <= lastAnalyzedSampleCount) {
-            sampleCount += sampleLen;
+        if(current +sampleLen <= lastAnalyzed) {
+            current += sampleLen;
             return;
         }
 
-        // sampleCount < lastAnalyzedSampleCount < sampleCount+sampleLen
-        if(sampleCount < lastAnalyzedSampleCount) {
-            begin = (int)(lastAnalyzedSampleCount - sampleCount); // this must be smaller than sampleLen
-            sampleCount = lastAnalyzedSampleCount;
+        // current < lastAnalyzed < current+sampleLen
+        if(current < lastAnalyzed) {
+            begin = (int)(lastAnalyzed - current); // this must be smaller than sampleLen
+            current = lastAnalyzed;
         }
 
 
@@ -128,8 +128,8 @@ public class SilenceAnalyzer {
         {
             SilentSection last = popFromList();
             insideSilence = true;
-            silenceBegin = last.silenceBeginSampleCount;
-            duration = last.silenceDurationSampleCount;
+            silenceBegin = last.begin;
+            duration = last.duration;
         }
 
         for(int i = begin; i < shorts.length; i++)
@@ -142,7 +142,7 @@ public class SilenceAnalyzer {
                 } else {
                     if(duration > MINIMUM_DURATION) {
                         silentSectionList.add(new SilentSection(silenceBegin, duration, true));
-                        Log.d("PrevSilence", "endSilence: " + sampleCount + ", " + shorts[i]);
+                        Log.d("PrevSilence", "endSilence: " + current + ", " + shorts[i]);
                     }
                     silenceBegin = 0;
                     duration = 0;
@@ -151,10 +151,10 @@ public class SilenceAnalyzer {
             } else if(isSilence(shorts[i]))
             {
                 insideSilence = true;
-                silenceBegin = sampleCount;
+                silenceBegin = current;
             }
 
-            sampleCount++;
+            current++;
         }
         if(insideSilence) {
             silentSectionList.add(new SilentSection(silenceBegin, duration, false));
