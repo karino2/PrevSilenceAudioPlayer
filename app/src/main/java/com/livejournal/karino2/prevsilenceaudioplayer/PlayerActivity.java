@@ -29,6 +29,8 @@ public class PlayerActivity extends ActionBarActivity {
                 PlayerService.startActionStop(PlayerActivity.this);
             }
         });
+
+
     }
 
 

@@ -16,9 +16,24 @@ import java.nio.ByteBuffer;
  * Created by karino on 1/12/15.
  */
 public class AudioPlayer {
+    public interface RestartListener {
+        void requestRestart();
+    }
+
+
+    public void requestPrev() {
+        if(!isRunning)
+        {
+            listener.requestRestart();
+            return;
+        }
+        pendingCommandExists = true;
+        pendingCommand = Command.PREVIOUS;
+    }
 
     enum Command {
         CANCEL,
+        PREVIOUS,
         NEW_FILE
     }
 
@@ -29,10 +44,12 @@ public class AudioPlayer {
     AudioTrack audioTrack;
     MediaCodec codec;
     SilenceAnalyzer analyzer;
+    RestartListener listener;
 
-    public AudioPlayer() {
+    public AudioPlayer(RestartListener listener) {
         extractor = new MediaExtractor();
         analyzer = new SilenceAnalyzer();
+        this.listener = listener;
     }
 
     String pendingNewFile;
@@ -69,6 +86,7 @@ public class AudioPlayer {
 
         codec = MediaCodec.createDecoderByType(mime);
         codec.configure(format, null, null, 0);
+        analyzer.setSampleRate(sampleRate);
     }
 
 
@@ -92,79 +110,17 @@ public class AudioPlayer {
         try {
             setupCodecAndOutputAudioTrack();
 
-
-            codec.start();
-
-            audioTrack.play();
-            extractor.selectTrack(0);
-
-            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-            final long TIMEOUT = 1000; // us.
-
-            ByteBuffer[] codecInputBuffers = codec.getInputBuffers();
-            ByteBuffer[] codecOutputBuffers = codec.getOutputBuffers();
-
-            boolean outputDone = false;
-            boolean inputEnd = false;
-
-            int bufferingCount = 0;
-            final int BUFFER_LIMIT = 10;
-
-            analyzer.clear();
-            analyzer.setDecodeBegin(0);
-
-            while (!pendingCommandExists && !outputDone && bufferingCount < BUFFER_LIMIT) {
-                bufferingCount++;
-
-                if (!inputEnd) {
-                    int inputBufIndex = codec.dequeueInputBuffer(TIMEOUT);
-                    if (inputBufIndex >= 0) {
-                        ByteBuffer dstBuf = codecInputBuffers[inputBufIndex];
-                        long presentTimeUS = extractor.getSampleTime();
-
-                        int sampleSize = extractor.readSampleData(dstBuf, 0);
-                        if (sampleSize >= 0) {
-                            // check silent here.
-
-                            codec.queueInputBuffer(inputBufIndex, 0, sampleSize, presentTimeUS, 0);
-                            extractor.advance();
-                        } else {
-                            inputEnd = true;
-                            codec.queueInputBuffer(inputBufIndex, 0, 0, presentTimeUS, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                        }
-                    }
-                }
+            PlayingState playing = new PlayingState(extractor, codec, audioTrack, analyzer);
+            playing.prepare();
 
 
-                int res = codec.dequeueOutputBuffer(info, TIMEOUT);
-                if (res >= 0) {
-                    bufferingCount = 0;
-
-                    int outBufIndex = res;
-                    ByteBuffer outBuf = codecOutputBuffers[outBufIndex];
-                    analyzer.analyze(outBuf, info.size, 2); // 8bit, 1.  16bit 2.
-                    byte[] chunk = new byte[info.size];
-                    outBuf.get(chunk);
-                    outBuf.clear();
-                    if (chunk.length > 0) {
-                        audioTrack.write(chunk, 0, chunk.length);
-                    }
-
-                    codec.releaseOutputBuffer(outBufIndex, false);
-                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        outputDone = true;
-                    }
-
-                } else if (res == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                    codecOutputBuffers = codec.getOutputBuffers();
-                } else {
-                    Log.d("PrevSilence", "ignoring dequeue buffer return: " + res);
-                }
+            while (!pendingCommandExists && !playing.isEnd()) {
+                playing.playOne();
             }
 
             finalizeCodecAndOutputAudioTrack();
 
-            analyzer.debugPrint();
+            // analyzer.debugPrint();
 
             if(pendingCommandExists) {
                 handlePendingCommand();
@@ -175,6 +131,7 @@ public class AudioPlayer {
 
     }
 
+
     private void handlePendingCommand() throws IOException {
         pendingCommandExists = false;
         if(pendingCommand == Command.CANCEL) {
@@ -182,11 +139,16 @@ public class AudioPlayer {
         }
         if(pendingCommand == Command.NEW_FILE) {
             setAudioPath(pendingNewFile);
-            // TODO: need thread post here.
-            // Thread.currentThread().
+            listener.requestRestart();
             return ;
         }
+        if(pendingCommand == Command.PREVIOUS) {
+
+            return;
+        }
+
     }
+
 
 
     private void finalizeCodecAndOutputAudioTrack() {

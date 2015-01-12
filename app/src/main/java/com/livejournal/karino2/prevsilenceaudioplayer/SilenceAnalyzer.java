@@ -18,23 +18,21 @@ public class SilenceAnalyzer {
         }
     }
 
-    /*
-    long lastAnalyzedFrameUS;
-    // ex. 44100
-    int sampleRate;
-    */
+    long lastAnalyzedSampleCount;
 
     class SilentSection {
-        public long decodeBeginUS;
-        public long silenceBeginSampleCount; // dist from decodeBegin.
+        public long silenceBeginSampleCount;
         public long silenceDurationSampleCount;
         public boolean isEnded;
 
-        SilentSection(long decodeUS, long begin, long duration, boolean isEnded){
-            decodeBeginUS = decodeUS;
+        SilentSection(long begin, long duration, boolean isEnded){
             silenceBeginSampleCount = begin;
             silenceDurationSampleCount = duration;
             this.isEnded = isEnded;
+        }
+
+        public long getEnd() {
+            return silenceBeginSampleCount+silenceDurationSampleCount;
         }
     }
 
@@ -47,14 +45,44 @@ public class SilenceAnalyzer {
     public void clear() {
         silentSectionList.clear();
         sampleCount = 0;
-        decodeBeginUS = 0;
+    }
+
+    public long getPreviousSilentEnd() {
+        return getPreviousSilentEnd(sampleCount);
+    }
+
+    // return samplecount. caller must convert to us.
+    public long getPreviousSilentEnd(long from) {
+        if(silentSectionList.size() == 0)
+            return 0;
+        SilentSection prev = silentSectionList.get(0);
+        if(prev.getEnd() > from)
+            return 0;
+        for(SilentSection cur : silentSectionList) {
+            if(cur.getEnd() > from) {
+                return prev.getEnd();
+            }
+            prev = cur;
+        }
+        return prev.getEnd();
+    }
+
+
+
+    // ex. 44100
+    int sampleRate;
+
+    public void setSampleRate(int sampleRate) {
+        this.sampleRate = sampleRate;
     }
 
     long sampleCount = 0;
-    long decodeBeginUS;
     public void setDecodeBegin(long beginUS) {
-        decodeBeginUS = beginUS;
-        sampleCount = 0;
+        lastAnalyzedSampleCount = Math.max(lastAnalyzedSampleCount, sampleCount);
+        long newCount = beginUS*sampleRate/1000000;
+        if(newCount > lastAnalyzedSampleCount)
+            throw new UnsupportedOperationException("seek forward is not yet supported");
+        sampleCount = newCount;
     }
 
     final long SILENCE_THRESHOLD = 100;
@@ -73,8 +101,23 @@ public class SilenceAnalyzer {
         if(oneSampleByteNum != 2)
             throw new UnsupportedOperationException("Only support 16bit PCM for a while");
 
+        int begin = 0;
         // Assume oneSampleByteNum always 2 for a while, i.e. 16BIT PCM.
-        short[] shorts = new short[chunkLen/2];
+        int sampleLen = chunkLen/2;
+
+        if(sampleCount+sampleLen <= lastAnalyzedSampleCount) {
+            sampleCount += sampleLen;
+            return;
+        }
+
+        // sampleCount < lastAnalyzedSampleCount < sampleCount+sampleLen
+        if(sampleCount < lastAnalyzedSampleCount) {
+            begin = (int)(lastAnalyzedSampleCount - sampleCount); // this must be smaller than sampleLen
+            sampleCount = lastAnalyzedSampleCount;
+        }
+
+
+        short[] shorts = new short[sampleLen];
         chunk.order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shorts);
 
 
@@ -89,7 +132,7 @@ public class SilenceAnalyzer {
             duration = last.silenceDurationSampleCount;
         }
 
-        for(int i = 0; i < shorts.length; i++)
+        for(int i = begin; i < shorts.length; i++)
         {
 
             if(insideSilence)
@@ -98,7 +141,7 @@ public class SilenceAnalyzer {
                     duration++;
                 } else {
                     if(duration > MINIMUM_DURATION) {
-                        silentSectionList.add(new SilentSection(decodeBeginUS, silenceBegin, duration, true));
+                        silentSectionList.add(new SilentSection(silenceBegin, duration, true));
                         Log.d("PrevSilence", "endSilence: " + sampleCount + ", " + shorts[i]);
                     }
                     silenceBegin = 0;
@@ -114,7 +157,7 @@ public class SilenceAnalyzer {
             sampleCount++;
         }
         if(insideSilence) {
-            silentSectionList.add(new SilentSection(decodeBeginUS, silenceBegin, duration, false));
+            silentSectionList.add(new SilentSection(silenceBegin, duration, false));
         }
     }
 
