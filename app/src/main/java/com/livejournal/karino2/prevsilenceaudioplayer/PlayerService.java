@@ -81,6 +81,7 @@ public class PlayerService extends Service {
               playerThread =  new Thread(new Runnable() {
                     @Override
                     public void run() {
+                        android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
                         try {
                             audioPlayer.play();
                         } catch (IOException e) {
@@ -94,9 +95,6 @@ public class PlayerService extends Service {
                         }
                     }
                 });
-                // TODO: set priority.
-                // android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
-                // playerThread.setPriority();
                 playerThread.start();
             } else {
                 audioPlayer.playAudio(audioFilePath);

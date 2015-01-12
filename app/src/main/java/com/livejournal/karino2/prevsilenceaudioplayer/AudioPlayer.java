@@ -28,9 +28,11 @@ public class AudioPlayer {
     MediaExtractor extractor;
     AudioTrack audioTrack;
     MediaCodec codec;
+    SilenceAnalyzer analyzer;
 
     public AudioPlayer() {
         extractor = new MediaExtractor();
+        analyzer = new SilenceAnalyzer();
     }
 
     String pendingNewFile;
@@ -54,6 +56,7 @@ public class AudioPlayer {
     private void setupCodecAndOutputAudioTrack() throws IOException {
         MediaFormat format = extractor.getTrackFormat(0);
 
+        // ex. 44100
         int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
         String mime = format.getString(MediaFormat.KEY_MIME);
 
@@ -107,6 +110,8 @@ public class AudioPlayer {
             int bufferingCount = 0;
             final int BUFFER_LIMIT = 10;
 
+            analyzer.clear();
+            analyzer.setDecodeBegin(0);
 
             while (!pendingCommandExists && !outputDone && bufferingCount < BUFFER_LIMIT) {
                 bufferingCount++;
@@ -137,6 +142,7 @@ public class AudioPlayer {
 
                     int outBufIndex = res;
                     ByteBuffer outBuf = codecOutputBuffers[outBufIndex];
+                    analyzer.analyze(outBuf, info.size, 2); // 8bit, 1.  16bit 2.
                     byte[] chunk = new byte[info.size];
                     outBuf.get(chunk);
                     outBuf.clear();
@@ -157,6 +163,8 @@ public class AudioPlayer {
             }
 
             finalizeCodecAndOutputAudioTrack();
+
+            analyzer.debugPrint();
 
             if(pendingCommandExists) {
                 handlePendingCommand();
