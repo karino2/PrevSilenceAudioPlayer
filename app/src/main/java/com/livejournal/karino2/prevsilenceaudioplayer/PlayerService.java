@@ -56,6 +56,14 @@ public class PlayerService extends Service {
         context.startService(intent);
     }
 
+    public static void startActionPrevWithDelay(Context context) {
+        Intent intent = new Intent(context, PlayerService.class);
+        intent.setAction(ACTION_PREV);
+        intent.putExtra("DELAY", true);
+        context.startService(intent);
+    }
+
+
     public static void startActionPrev(Context context) {
         Intent intent = new Intent(context, PlayerService.class);
         intent.setAction(ACTION_PREV);
@@ -113,7 +121,7 @@ public class PlayerService extends Service {
                 handleActionStop();
                 return START_NOT_STICKY;
             } else if(ACTION_PREV.equals(action)) {
-                handleActionPrev();
+                handleActionPrev(intent.getBooleanExtra("DELAY", false));
                 return START_STICKY;
             } else if(ACTION_QUIT.equals(action)) {
                 audioPlayer.requestStop();
@@ -125,9 +133,9 @@ public class PlayerService extends Service {
         return START_NOT_STICKY;
     }
 
-    private void handleActionPrev() {
+    private void handleActionPrev(boolean withDelay) {
         Log.d("PrevSilence", "handlePrev0");
-        audioPlayer.requestPrev();
+        audioPlayer.requestPrev(withDelay);
     }
 
     @Override
@@ -202,6 +210,6 @@ public class PlayerService extends Service {
     private void handleActionStop() {
         if(audioPlayer.isRunning()) {
             audioPlayer.requestStop();
-        } 
+        }
     }
 }

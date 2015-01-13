@@ -13,7 +13,7 @@ public class AudioPlayer {
     }
 
 
-    public void requestPrev() {
+    public void requestPrev(boolean withDelay) {
         if(!isRunning)
         {
             Log.d("PrevSilence", "Prev: not running! ignore for a while.");
@@ -21,12 +21,13 @@ public class AudioPlayer {
             return;
         }
         pendingCommandExists = true;
-        pendingCommand = Command.PREVIOUS;
+        pendingCommand = withDelay? Command.PREVIOUS_WITHDELAY : Command.PREVIOUS;
     }
 
     enum Command {
         STOP,
         PREVIOUS,
+        PREVIOUS_WITHDELAY,
         NEW_FILE
     }
 
@@ -130,6 +131,14 @@ public class AudioPlayer {
         if(pendingCommand == Command.PREVIOUS) {
             pendingSeekTo = playingState.getPreviousSilentEnd();
             Log.d("PrevSilence", "Prev: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
+            // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
+            listener.requestRestart();
+            return;
+        }
+        if(pendingCommand == Command.PREVIOUS_WITHDELAY) {
+            long rawSeekTo = playingState.getPreviousSilentEnd();
+            pendingSeekTo = Math.max(rawSeekTo-500000, 0); // bluetooth become silent for a while when operate button. wait some time for this reason.
+            Log.d("PrevSilence", "Prev: get pendingSeekTo withDlay: " + pendingSeekTo + ", " + playingState.getCurrent());
             // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
             listener.requestRestart();
             return;

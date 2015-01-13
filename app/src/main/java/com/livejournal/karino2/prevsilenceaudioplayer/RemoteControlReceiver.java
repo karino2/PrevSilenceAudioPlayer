@@ -23,7 +23,7 @@ public class RemoteControlReceiver extends BroadcastReceiver {
             if (KeyEvent.KEYCODE_MEDIA_PLAY == event.getKeyCode()) {
                 // NYI.
             } else if(KeyEvent.KEYCODE_MEDIA_PREVIOUS == event.getKeyCode()) {
-                PlayerService.startActionPrev(context);
+                PlayerService.startActionPrevWithDelay(context);
                 abortBroadcast();
                 Toast.makeText(context, "prev recived", Toast.LENGTH_LONG).show();
                 return;
