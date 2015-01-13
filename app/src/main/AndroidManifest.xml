@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.livejournal.karino2.prevsilenceaudioplayer" >
 
+    <permission android:name="android.permission.BLUETOOTH" />
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
@@ -22,6 +23,16 @@
             android:enabled="true"
             android:exported="false" >
         </service>
+
+        <receiver
+            android:name=".RemoteControlReceiver"
+            android:enabled="true"
+            android:exported="true" >
+            <intent-filter android:priority="9999">
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

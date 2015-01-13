@@ -1,5 +1,6 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
+import android.media.AudioManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -13,6 +14,7 @@ public class PlayerActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_player);
 
 
@@ -56,6 +58,11 @@ public class PlayerActivity extends ActionBarActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
+        if(id == R.id.action_quit) {
+            PlayerService.startActionQuit(this);
+            finish();
+            return true;
+        }
         if (id == R.id.action_settings) {
             return true;
         }
