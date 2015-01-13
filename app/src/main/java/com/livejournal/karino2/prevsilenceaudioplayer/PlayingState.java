@@ -24,16 +24,10 @@ public class PlayingState {
     public PlayingState() {
         extractor = new MediaExtractor();
         analyzer = new SilenceAnalyzer();
-
-        /*
-        extractor = extractor1;
-        codec = codec1;
-        audioTrack = audioTrack1;
-        analyzer = analyzer1;
-        */
     }
 
     public void setAudioPath(String audioFilePath) throws IOException {
+        extractor = new MediaExtractor();
         extractor.setDataSource(audioFilePath);
     }
 
