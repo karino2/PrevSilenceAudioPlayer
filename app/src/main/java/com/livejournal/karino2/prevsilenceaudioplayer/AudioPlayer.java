@@ -16,8 +16,8 @@ public class AudioPlayer {
     public void requestPrev() {
         if(!isRunning)
         {
-            Log.d("PrevSilence", "Prev: not running!");
-            listener.requestRestart();
+            Log.d("PrevSilence", "Prev: not running! ignore for a while.");
+            // listener.requestRestart();
             return;
         }
         pendingCommandExists = true;
