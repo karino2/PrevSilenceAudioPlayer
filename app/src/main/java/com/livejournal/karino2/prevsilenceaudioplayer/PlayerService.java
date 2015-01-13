@@ -87,6 +87,7 @@ public class PlayerService extends Service {
             AudioManager am = (AudioManager)getSystemService(AUDIO_SERVICE);
             receiverName = new ComponentName(this, RemoteControlReceiver.class);
             am.registerMediaButtonEventReceiver(receiverName);
+            RemoteControlReceiver.setServiceRunning(true);
 
 
             /*
@@ -199,6 +200,7 @@ public class PlayerService extends Service {
         if(receiverRegistered) {
             AudioManager am = (AudioManager)getSystemService(AUDIO_SERVICE);
             am.unregisterMediaButtonEventReceiver(receiverName);
+            RemoteControlReceiver.setServiceRunning(false);
         }
         super.onDestroy();
     }
