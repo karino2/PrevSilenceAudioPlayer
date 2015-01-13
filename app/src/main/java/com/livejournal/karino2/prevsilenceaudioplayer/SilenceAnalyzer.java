@@ -72,7 +72,7 @@ public class SilenceAnalyzer {
         return getPreviousSilentEnd(sampleCountToUS(current));
     }
 
-    final long MARGIN_NS = 100000;
+    final long MARGIN_NS = 500000;
 
     public long getPreviousSilentEnd(long fromUS) {
         if(silentSectionList.size() == 0)
