@@ -4,7 +4,6 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.Context;
-import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.*;
 import android.os.Process;
@@ -201,15 +200,8 @@ public class PlayerService extends Service {
      * parameters.
      */
     private void handleActionStop() {
-        Log.d("PrevSilence", "HandleStop 0");
         if(audioPlayer.isRunning()) {
-            Log.d("PrevSilence", "HandleStop 1");
             audioPlayer.requestStop();
-            Log.d("PrevSilence", "HandleStop 1-2");
-        } else {
-            Log.d("PrevSilence", "HandleStop 2");
-            stopSelf();
-            Log.d("PrevSilence", "HandleStop 2-2");
-        }
+        } 
     }
 }
