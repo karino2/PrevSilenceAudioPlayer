@@ -69,7 +69,6 @@ public class PlayerService extends Service {
         context.startService(intent);
     }
 
-    RemoteControlReceiver receiver = null;
     boolean receiverRegistered = false;
     ComponentName receiverName;
 
@@ -82,21 +81,12 @@ public class PlayerService extends Service {
             receiverName = new ComponentName(this, RemoteControlReceiver.class);
             am.registerMediaButtonEventReceiver(receiverName);
 
-            // am.registerMediaButtonEventReceiver(new ComponentName(this, RemoteControlReceiver.class));
-            // Log.d("PrevSilence", "pkgName: " + this.getPackageName() + ", " + ((Context)this).getPackageName());
-            /*
-            ComponentName componentName = new ComponentName(this.getPackageName(), RemoteControlReceiver.class.getName());
-            am.registerMediaButtonEventReceiver(componentName);
-            */
 
             /*
-            receiver = new RemoteControlReceiver();
-            IntentFilter mediaFilter = new IntentFilter(Intent.ACTION_MEDIA_BUTTON);
-            mediaFilter.setPriority(2147483647 ); // IntentFilter.SYSTEM_HIGH_PRIORITY-1
-            registerReceiver(receiver, mediaFilter);
-
 
             AudioManager am = (AudioManager)getSystemService(AUDIO_SERVICE);
+            */
+            /*
             int result = am.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
                                                   @Override
                                                   public void onAudioFocusChange(int focusChange) {
@@ -108,8 +98,8 @@ public class PlayerService extends Service {
                     // Request permanent focus.
                     AudioManager.AUDIOFOCUS_GAIN);
 
-            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                am.registerMediaButtonEventReceiver(new ComponentName(this, RemoteControlReceiver.class));
+            if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                showMessage("can't gain audio focus");
             }
             */
         }
@@ -127,6 +117,7 @@ public class PlayerService extends Service {
                 handleActionPrev();
                 return START_STICKY;
             } else if(ACTION_QUIT.equals(action)) {
+                audioPlayer.requestStop();
                 stopSelf();
                 return START_NOT_STICKY;
             }
@@ -201,10 +192,6 @@ public class PlayerService extends Service {
         if(receiverRegistered) {
             AudioManager am = (AudioManager)getSystemService(AUDIO_SERVICE);
             am.unregisterMediaButtonEventReceiver(receiverName);
-            /*
-            unregisterReceiver(receiver);
-            receiver = null;
-            */
         }
         super.onDestroy();
     }
