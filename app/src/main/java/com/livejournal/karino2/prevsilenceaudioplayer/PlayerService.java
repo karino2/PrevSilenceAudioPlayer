@@ -81,6 +81,7 @@ public class PlayerService extends Service {
     }
 
     private void handleActionPrev() {
+        Log.d("PrevSilence", "handlePrev0");
         audioPlayer.requestPrev();
     }
 
@@ -145,6 +146,10 @@ public class PlayerService extends Service {
      * parameters.
      */
     private void handleActionStop() {
-        audioPlayer.requestStop();
+        if(audioPlayer.isRunning()) {
+            audioPlayer.requestStop();
+        } else {
+            stopSelf();
+        }
     }
 }

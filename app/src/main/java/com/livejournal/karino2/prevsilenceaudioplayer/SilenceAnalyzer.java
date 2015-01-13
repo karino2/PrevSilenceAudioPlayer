@@ -64,6 +64,8 @@ public class SilenceAnalyzer {
     public void clear() {
         silentSectionList.clear();
         current = 0;
+        lastAnalyzedCount = 0;
+        lastAnalyzedUS = 0;
     }
 
     public long getPreviousSilentEnd() {

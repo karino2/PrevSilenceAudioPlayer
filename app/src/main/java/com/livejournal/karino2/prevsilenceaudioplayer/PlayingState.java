@@ -46,9 +46,11 @@ public class PlayingState {
         codec.configure(format, null, null, 0);
         updateFormat(format);
 
-
+        codec.start();
+        audioTrack.play();
     }
 
+    MediaFormat prevFormat = null;
     private void updateFormat(MediaFormat format) {
         // ex. 44100
         int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
@@ -61,6 +63,8 @@ public class PlayingState {
 
         analyzer.setSampleRate(sampleRate);
         analyzer.setChannelNum(channelConfiguration == AudioFormat.CHANNEL_OUT_MONO ? 1 : 2);
+
+        prevFormat = format;
     }
 
 
@@ -81,9 +85,6 @@ public class PlayingState {
     public void prepare() throws IOException {
         setupCodecAndOutputAudioTrack();
 
-        codec.start();
-
-        audioTrack.play();
 
         extractor.selectTrack(0);
 
@@ -222,6 +223,11 @@ public class PlayingState {
         } else if (res == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
             MediaFormat oformat = codec.getOutputFormat();
             Log.d("PrevSilence", "output format has changed to " + oformat);
+            if(formatEquals(oformat, prevFormat)) {
+                Log.d("PrevSilence", "same format, do nothing.");
+                return;
+            }
+
             if(skipUntil != -1) {
                 Log.d("PrevSilence", "output format has changed during skip, not supported. just ignore skip");
                 skipUntil = -1;
@@ -232,8 +238,18 @@ public class PlayingState {
             updateFormat(oformat);
             currentPos = analyzer.UsToSampleCount(currentUS);
             audioTrack.play();
+            info = new MediaCodec.BufferInfo();
         } else {
             Log.d("PrevSilence", "ignoring dequeue buffer return: " + res);
         }
+    }
+
+    private boolean formatEquals(MediaFormat format1, MediaFormat format2) {
+        return (format1.getInteger(MediaFormat.KEY_SAMPLE_RATE) == format2.getInteger(MediaFormat.KEY_SAMPLE_RATE)) &&
+                (format1.getInteger(MediaFormat.KEY_CHANNEL_COUNT) == format2.getInteger(MediaFormat.KEY_CHANNEL_COUNT));
+    }
+
+    public long getCurrent() {
+        return analyzer.getCurrent();
     }
 }

@@ -1,16 +1,8 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
-import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
-import android.media.MediaCodec;
-import android.media.MediaExtractor;
-import android.media.MediaFormat;
 import android.util.Log;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  * Created by karino on 1/12/15.
@@ -24,6 +16,7 @@ public class AudioPlayer {
     public void requestPrev() {
         if(!isRunning)
         {
+            Log.d("PrevSilence", "Prev: not running!");
             listener.requestRestart();
             return;
         }
@@ -32,7 +25,7 @@ public class AudioPlayer {
     }
 
     enum Command {
-        CANCEL,
+        STOP,
         PREVIOUS,
         NEW_FILE
     }
@@ -64,6 +57,7 @@ public class AudioPlayer {
 
     public void setAudioPath(String audioFilePath) throws IOException {
         playingState.setAudioPath(audioFilePath);
+        playingState.prepare();
     }
 
 
@@ -75,11 +69,14 @@ public class AudioPlayer {
     Command pendingCommand;
     boolean pendingCommandExists = false;
 
+    public boolean isRunning() {
+        return isRunning;
+    }
 
     public void requestStop() {
         if(isRunning) {
             pendingCommandExists = true;
-            pendingCommand = Command.CANCEL;
+            pendingCommand = Command.STOP;
         }
     }
 
@@ -90,10 +87,10 @@ public class AudioPlayer {
         pendingCommandExists = false;
 
         try {
-            playingState.prepare();
 
             if(pendingSeekTo != -1)
             {
+                Log.d("PrevSilence", "Prev: seekTo: " + pendingSeekTo);
                 playingState.seekTo(pendingSeekTo);
                 pendingSeekTo = -1;
             }
@@ -103,12 +100,13 @@ public class AudioPlayer {
                 playingState.playOne();
             }
 
-            playingState.finishPlaying();
 
             // analyzer.debugPrint();
 
             if(pendingCommandExists) {
                 handlePendingCommand();
+            } else {
+                playingState.finishPlaying();
             }
         }finally {
             isRunning = false;
@@ -119,16 +117,19 @@ public class AudioPlayer {
 
     private void handlePendingCommand() throws IOException {
         pendingCommandExists = false;
-        if(pendingCommand == Command.CANCEL) {
+        if(pendingCommand == Command.STOP) {
+            playingState.finishPlaying();
             return;
         }
         if(pendingCommand == Command.NEW_FILE) {
+            playingState.finishPlaying();
             setAudioPath(pendingNewFile);
             listener.requestRestart();
             return ;
         }
         if(pendingCommand == Command.PREVIOUS) {
             pendingSeekTo = playingState.getPreviousSilentEnd();
+            Log.d("PrevSilence", "Prev: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
             // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
             listener.requestRestart();
             return;
