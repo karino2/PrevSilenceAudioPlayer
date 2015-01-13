@@ -81,6 +81,8 @@ public class PlayerService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        audioPlayer.setContext(this);
+
         if(!receiverRegistered) {
             receiverRegistered = true;
 

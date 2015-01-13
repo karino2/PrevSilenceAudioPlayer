@@ -1,6 +1,8 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
+import android.content.Intent;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -16,6 +18,14 @@ public class PlayerActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_player);
+
+        Intent intent = getIntent();
+        if(intent != null && intent.getAction() != null && intent.getAction().equals(Intent.ACTION_VIEW))
+        {
+            Uri uri = intent.getData();
+            ((EditText)findViewById(R.id.editTextPath)).setText(uri.toString() /* uri.getPath() */ );
+            PlayerService.startActionPlay(this, uri.toString());
+        }
 
 
         findViewById(R.id.buttonPlay).setOnClickListener(new View.OnClickListener() {

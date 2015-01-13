@@ -1,5 +1,6 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
+import android.content.Context;
 import android.util.Log;
 
 import java.io.IOException;
@@ -8,6 +9,12 @@ import java.io.IOException;
  * Created by karino on 1/12/15.
  */
 public class AudioPlayer {
+    private Context context;
+
+    public void setContext(Context context) {
+        this.context = context;
+    }
+
     public interface RestartListener {
         void requestRestart();
     }
@@ -57,7 +64,7 @@ public class AudioPlayer {
     }
 
     public void setAudioPath(String audioFilePath) throws IOException {
-        playingState.setAudioPath(audioFilePath);
+        playingState.setAudioPath(context, audioFilePath);
         playingState.prepare();
     }
 

@@ -1,11 +1,13 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
+import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
+import android.net.Uri;
 import android.util.Log;
 
 import java.io.IOException;
@@ -26,9 +28,10 @@ public class PlayingState {
         analyzer = new SilenceAnalyzer();
     }
 
-    public void setAudioPath(String audioFilePath) throws IOException {
+    public void setAudioPath(Context ctx, String audioFilePath) throws IOException {
         extractor = new MediaExtractor();
-        extractor.setDataSource(audioFilePath);
+
+        extractor.setDataSource(ctx, Uri.parse(audioFilePath), null);
     }
 
 
