@@ -2,16 +2,22 @@ package com.livejournal.karino2.prevsilenceaudioplayer;
 
 import android.app.Service;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.*;
 import android.os.Process;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PlayerService extends Service {
     private static final String ACTION_PLAY = "com.livejournal.karino2.prevsilenceaudioplayer.action.PLAY";
@@ -23,7 +29,7 @@ public class PlayerService extends Service {
     private static final String EXTRA_PARAM_FILE_PATH = "com.livejournal.karino2.prevsilenceaudioplayer.extra.PATH";
 
 
-    AudioPlayer audioPlayer = new AudioPlayer(new AudioPlayer.RestartListener() {
+    AudioPlayer audioPlayer = new AudioPlayer(new AudioPlayer.StateChangedListener() {
         @Override
         public void requestRestart() {
             // delayed for avoid isRunning overwrite for finally clause.
@@ -34,7 +40,76 @@ public class PlayerService extends Service {
                 }
             });
         }
+
+        @Override
+        public void reachEnd() {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    playNext();
+                }
+            });
+        }
     });
+
+    private void playNext() {
+        ContentResolver resolver = getContentResolver();
+        Uri lastFile = Uri.parse(getLastFile());
+        if(!lastFile.getScheme().equals("file"))
+        {
+            Log.d("PrevSilent", "only support file:// for gotoNext");
+            return;
+        }
+
+        Uri parent = getParentUri(lastFile);
+
+        // TODO: This query contains sub folder too.
+        // assume file: for a while.
+        Cursor cursor = resolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                new String[]{
+                        MediaStore.Audio.Media.TITLE,
+                        MediaStore.Audio.Media.DATA
+                },
+                /*
+                "? LIKE ?",
+                new String[] {
+                        MediaStore.Audio.Media.DATA,
+                        parent.toString()+"%"
+                },
+                */
+                MediaStore.Audio.Media.DATA + " LIKE ?",
+                new String[] {
+                        parent.getPath()+"%"
+                },
+                MediaStore.Audio.Media._ID
+                );
+        try {
+            if(!cursor.moveToFirst()) {
+                Log.d("PrevSilence", "No music file found. Where is current playing file?");
+                return;
+            }
+            do {
+                if(cursor.getString(1).equals(lastFile.getPath())) {
+                    if(!cursor.moveToNext()) {
+                        Log.d("PrevSilence", "This file is last. No next file.");
+                        return;
+                    }
+                    String nextPath = cursor.getString(1);
+                    showMessage("Next file is: " + nextPath);
+                    String nextUriStr = "file://" + nextPath;
+                    startPlayThreadWithFile(nextUriStr);
+                    saveLastFile(nextUriStr); // setDataSource is succeeded. So save here is not so bad.
+                    return;
+                }
+            }while(cursor.moveToNext());
+            Log.d("PrevSilence", "Original audio file not found. where is there?");
+        } catch (IOException e) {
+            showMessage("fail to play next file: " + e.getMessage());
+        } finally {
+            cursor.close();
+        }
+    }
+
     Thread playerThread = null;
 
     /**
@@ -215,8 +290,7 @@ public class PlayerService extends Service {
     private void handleActionPlay(String audioFilePath)  {
         try {
             if(!audioPlayer.isRunning()) {
-              audioPlayer.setAudioPath(audioFilePath);
-                startPlayThread();
+                startPlayThreadWithFile(audioFilePath);
             } else {
                 audioPlayer.playAudio(audioFilePath);
             }
@@ -224,6 +298,11 @@ public class PlayerService extends Service {
         } catch (IOException e) {
             showDebugMessage("play fail: " + e.getMessage());
         }
+    }
+
+    private void startPlayThreadWithFile(String audioFilePath) throws IOException {
+        audioPlayer.setAudioPath(audioFilePath);
+        startPlayThread();
     }
 
     private void startPlayThread() {
@@ -271,5 +350,21 @@ public class PlayerService extends Service {
         if(audioPlayer.isRunning()) {
             audioPlayer.requestStop();
         }
+    }
+
+    public Uri getParentUri(Uri input) {
+        List<String> pathSegments = input.getPathSegments();
+
+        StringBuilder builder = new StringBuilder();
+        builder.append(input.getScheme());
+        builder.append("://");
+        builder.append(input.getHost());
+        builder.append("/");
+        for(int i = 0; i < pathSegments.size()-1; i++) {
+            builder.append(pathSegments.get(i));
+            builder.append("/");
+        }
+
+        return Uri.parse(builder.toString());
     }
 }

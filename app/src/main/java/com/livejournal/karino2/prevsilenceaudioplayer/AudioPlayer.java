@@ -23,8 +23,9 @@ public class AudioPlayer {
         pendingCommandExists = true;
     }
 
-    public interface RestartListener {
+    public interface StateChangedListener {
         void requestRestart();
+        void reachEnd();
     }
 
 
@@ -55,9 +56,9 @@ public class AudioPlayer {
 
 
     PlayingState playingState;
-    RestartListener listener;
+    StateChangedListener listener;
 
-    public AudioPlayer(RestartListener listener) {
+    public AudioPlayer(StateChangedListener listener) {
         this.listener = listener;
         playingState = new PlayingState();
     }
@@ -130,6 +131,7 @@ public class AudioPlayer {
                 handlePendingCommand();
             } else {
                 playingState.finishPlaying();
+                listener.reachEnd();
             }
         }finally {
             isRunning = false;
