@@ -41,6 +41,13 @@ public class PlayingState {
         audioPathSet = true;
     }
 
+    public void gotoHead() {
+        if(isPlayReady()) {
+            finishPlaying();
+        }
+        extractor.seekTo(0, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
+    }
+
 
     private void setupCodecAndOutputAudioTrack() throws IOException {
         MediaFormat format = extractor.getTrackFormat(0);
@@ -125,6 +132,10 @@ public class PlayingState {
 
     public long getPreviousSilentEnd() {
         return analyzer.getPreviousSilentEnd();
+    }
+
+    public boolean atHead() {
+        return !isPlayReady() || currentPos == 0;
     }
 
     public void finishPlaying() {

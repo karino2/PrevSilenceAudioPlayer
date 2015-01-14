@@ -28,6 +28,10 @@ public class AudioPlayer {
         pendingCommandExists = true;
     }
 
+    public void gotoHead() {
+        playingState.gotoHead();
+    }
+
     public interface StateChangedListener {
         void requestRestart();
         void requestNext();
@@ -101,6 +105,7 @@ public class AudioPlayer {
     public boolean isRunning() {
         return isRunning;
     }
+    public boolean atHead() { return playingState.atHead(); }
 
     public void requestStop() {
         if(isRunning) {

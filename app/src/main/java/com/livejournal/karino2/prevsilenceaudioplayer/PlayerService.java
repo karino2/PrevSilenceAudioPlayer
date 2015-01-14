@@ -123,6 +123,7 @@ public class PlayerService extends Service {
         if(nextPath != null) {
             try {
                 startPlayThreadWithFile(nextPath);
+                showMessage(nextPath);
             } catch (IOException e) {
                 showMessage("play nextOrPrev fail: " + e.getMessage());
                 return;
@@ -135,8 +136,11 @@ public class PlayerService extends Service {
         playNextOrPrev("ASC");
     }
 
-    private void playPrev() {
-        playNextOrPrev("DSC");
+    // just set to previous file, not play.
+    private void gotoPrev() throws IOException {
+        String nextPath = findNextOrPrev(Uri.parse(getLastFile()), "DESC");
+        audioPlayer.setAudioPath(nextPath);
+        saveLastFile(nextPath);
     }
 
     Thread playerThread = null;
@@ -302,8 +306,17 @@ public class PlayerService extends Service {
     }
 
     private void handleActionPrev(boolean withDelay) {
-        Log.d("PrevSilence", "handlePrev0");
-        audioPlayer.requestPrev(withDelay);
+        if(audioPlayer.isRunning()) {
+            audioPlayer.requestPrev(withDelay);
+        } else if(!audioPlayer.atHead()) {
+            audioPlayer.gotoHead();
+        } else {
+            try {
+                gotoPrev();
+            } catch (IOException e) {
+                showMessage("Fail to setup previous file: " + e.getMessage());
+            }
+        }
     }
 
     @Override
