@@ -134,7 +134,8 @@ public class SilenceAnalyzer {
         lastAnalyzedUS = sampleCountToUS(lastAnalyzedCount);
     }
 
-    final long SILENCE_THRESHOLD = 100;
+    // final long SILENCE_THRESHOLD = 100;
+    final long SILENCE_THRESHOLD = 1000;
     final long MINIMUM_DURATION=10000;
 
     List<SilentSection> silentSectionList = new ArrayList<>();

@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.os.*;
 import android.os.Process;
@@ -46,6 +47,18 @@ public class PlayerService extends Service {
         context.startService(intent);
     }
 
+    public static void startActionPlayOrPause(Context context) {
+        String lastFile = s_getLastFile(context);
+        if("".equals(lastFile)) {
+            s_showMessage(context, "No audio set. Please choose audio first.");
+            return;
+        }
+        Intent intent = new Intent(context, PlayerService.class);
+        intent.setAction(ACTION_PLAY);
+        intent.putExtra(EXTRA_PARAM_FILE_PATH, lastFile);
+        context.startService(intent);
+    }
+
     /**
      * Starts this service to perform action STOP audio. If
      * the service is already performing a task this action will be queued.
@@ -76,12 +89,32 @@ public class PlayerService extends Service {
         context.startService(intent);
     }
 
+    private SharedPreferences getPref() {
+        return getSharedPreferences("pref", MODE_PRIVATE);
+    }
+
+    private static String s_getLastFile(Context ctx) {
+        return ctx.getSharedPreferences("pref", MODE_PRIVATE).getString("LAST_PLAY", "");
+    }
+
+    private String getLastFile() {
+        return getPref().getString("LAST_PLAY", "");
+    }
+
+    private void saveLastFile(String path) {
+        getPref().edit()
+                .putString("LAST_PLAY", path)
+                .commit();
+    }
+
+
     boolean receiverRegistered = false;
     ComponentName receiverName;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         audioPlayer.setContext(this);
+        audioPlayer.setLastAudioPath(getLastFile());
 
         if(!receiverRegistered) {
             receiverRegistered = true;
@@ -152,9 +185,14 @@ public class PlayerService extends Service {
         showMessage(msg);
     }
 
+    static void s_showMessage(Context ctx, String msg)
+    {
+        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
+    }
+
     void showMessage(String msg)
     {
-        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+        s_showMessage(getApplicationContext(), msg);
     }
 
     Handler handler = new Handler();
@@ -171,6 +209,7 @@ public class PlayerService extends Service {
             } else {
                 audioPlayer.playAudio(audioFilePath);
             }
+            saveLastFile(audioFilePath); // write if succeed.
         } catch (IOException e) {
             showDebugMessage("play fail: " + e.getMessage());
         }

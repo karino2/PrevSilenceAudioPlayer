@@ -20,23 +20,33 @@ public class RemoteControlReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if(isServiceRunning) {
+        if(isServiceRunning || PlayerActivity.s_isCreated) {
             Log.d("BlueTooth", "receive");
             // Toast.makeText(context, "onrecieve called. ", Toast.LENGTH_LONG).show();
             if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
                 KeyEvent event = (KeyEvent) intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+                Log.d("BlueTooth", event.toString());
                 if (event.getAction() != KeyEvent.ACTION_DOWN) {
                     return; // only handle key down.
                 }
-                if (KeyEvent.KEYCODE_MEDIA_PLAY == event.getKeyCode()) {
-                    // NYI.
+                if (KeyEvent.KEYCODE_MEDIA_PLAY == event.getKeyCode() ||
+                        KeyEvent.KEYCODE_MEDIA_PAUSE == event.getKeyCode()) {
+                    PlayerService.startActionPlayOrPause(context);
+                    abortBroadcast();
+                    showDebugMessage(context, "play or pause");
+                    return;
                 } else if (KeyEvent.KEYCODE_MEDIA_PREVIOUS == event.getKeyCode()) {
                     PlayerService.startActionPrevWithDelay(context);
                     abortBroadcast();
-                    Toast.makeText(context, "prev recived", Toast.LENGTH_LONG).show();
+                    showDebugMessage(context, "prev recived");
                     return;
                 }
             }
         }
+    }
+
+    private void showDebugMessage(Context context, String msg) {
+        Log.d("BlueTooth", msg);
+        Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
     }
 }

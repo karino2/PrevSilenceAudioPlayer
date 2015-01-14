@@ -9,10 +9,13 @@ import java.io.IOException;
  * Created by karino on 1/12/15.
  */
 public class AudioPlayer {
-    private Context context;
 
     public void setContext(Context context) {
-        this.context = context;
+        playingState.setContext(context);
+    }
+
+    public void setLastAudioPath(String lastAudioPath) {
+        playingState.setLastAudioPath(lastAudioPath);
     }
 
     public interface RestartListener {
@@ -64,7 +67,7 @@ public class AudioPlayer {
     }
 
     public void setAudioPath(String audioFilePath) throws IOException {
-        playingState.setAudioPath(context, audioFilePath);
+        playingState.setAudioPath(audioFilePath);
         playingState.prepare();
     }
 
@@ -94,7 +97,9 @@ public class AudioPlayer {
         isRunning = true;
         pendingCommandExists = false;
 
+
         try {
+            playingState.ensurePrepare();
 
             if(pendingSeekTo != -1)
             {

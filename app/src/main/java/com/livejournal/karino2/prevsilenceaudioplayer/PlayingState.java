@@ -22,16 +22,20 @@ public class PlayingState {
     AudioTrack audioTrack;
     MediaExtractor extractor;
     SilenceAnalyzer analyzer;
+    private String lastAudioPath;
+    Context context;
 
     public PlayingState() {
         extractor = new MediaExtractor();
         analyzer = new SilenceAnalyzer();
     }
 
-    public void setAudioPath(Context ctx, String audioFilePath) throws IOException {
-        extractor = new MediaExtractor();
 
-        extractor.setDataSource(ctx, Uri.parse(audioFilePath), null);
+    boolean audioPathSet = false;
+    public void setAudioPath(String audioFilePath) throws IOException {
+        extractor = new MediaExtractor();
+        extractor.setDataSource(context, Uri.parse(audioFilePath), null);
+        audioPathSet = true;
     }
 
 
@@ -79,7 +83,18 @@ public class PlayingState {
 
     long currentPos = 0;
 
+    public void ensurePrepare() throws IOException {
+        if(!playReady)
+            prepare();
+    }
+
+    boolean playReady = false;
     public void prepare() throws IOException {
+        if(!audioPathSet) {
+            setAudioPath(lastAudioPath);
+        }
+
+
         setupCodecAndOutputAudioTrack();
 
 
@@ -98,6 +113,7 @@ public class PlayingState {
 
         analyzer.clear();
         analyzer.setDecodeBegin(0);
+        playReady = true;
     }
 
     public long getPreviousSilentEnd() {
@@ -114,6 +130,7 @@ public class PlayingState {
             finalizeAudioTrack();
             audioTrack = null;
         }
+        playReady = false;
     }
 
     private void finalizeAudioTrack() {
@@ -248,5 +265,13 @@ public class PlayingState {
 
     public long getCurrent() {
         return analyzer.getCurrent();
+    }
+
+    public void setLastAudioPath(String lastAudioPath) {
+        this.lastAudioPath = lastAudioPath;
+    }
+
+    public void setContext(Context context) {
+        this.context = context;
     }
 }
