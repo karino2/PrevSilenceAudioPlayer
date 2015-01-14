@@ -62,16 +62,16 @@ public class PlayerService extends Service {
         });
     }
 
-    private void playNext() {
-        ContentResolver resolver = getContentResolver();
-        Uri lastFile = Uri.parse(getLastFile());
-        if(!lastFile.getScheme().equals("file"))
-        {
-            Log.d("PrevSilent", "only support file:// for gotoNext");
-            return;
-        }
 
-        Uri parent = getParentUri(lastFile);
+    private String findNextOrPrev(Uri origin, String order) {
+        if(!origin.getScheme().equals("file"))
+        {
+            Log.d("PrevSilent", "only support file:// for nextOrPrev");
+            return null;
+        }
+        ContentResolver resolver = getContentResolver();
+
+        Uri parent = getParentUri(origin);
 
         // TODO: This query contains sub folder too.
         // assume file: for a while.
@@ -91,33 +91,52 @@ public class PlayerService extends Service {
                 new String[] {
                         parent.getPath()+"%"
                 },
-                MediaStore.Audio.Media.DATA + " ASC"
-                );
+                MediaStore.Audio.Media.DATA + " " + order
+        );
         try {
             if(!cursor.moveToFirst()) {
                 Log.d("PrevSilence", "No music file found. Where is current playing file?");
-                return;
+                return null;
             }
             do {
-                if(cursor.getString(1).equals(lastFile.getPath())) {
+                if(cursor.getString(1).equals(origin.getPath())) {
                     if(!cursor.moveToNext()) {
                         Log.d("PrevSilence", "This file is last. No next file.");
-                        return;
+                        return null;
                     }
                     String nextPath = cursor.getString(1);
-                    showMessage("Next file is: " + nextPath);
+                    // showMessage("Next file is: " + nextPath);
                     String nextUriStr = "file://" + nextPath;
-                    startPlayThreadWithFile(nextUriStr);
-                    saveLastFile(nextUriStr); // setDataSource is succeeded. So save here is not so bad.
-                    return;
+                    return nextUriStr;
                 }
             }while(cursor.moveToNext());
             Log.d("PrevSilence", "Original audio file not found. where is there?");
-        } catch (IOException e) {
-            showMessage("fail to play next file: " + e.getMessage());
+            return null;
         } finally {
             cursor.close();
         }
+
+    }
+
+    private void playNextOrPrev(String order) {
+        String nextPath = findNextOrPrev(Uri.parse(getLastFile()), order);
+        if(nextPath != null) {
+            try {
+                startPlayThreadWithFile(nextPath);
+            } catch (IOException e) {
+                showMessage("play nextOrPrev fail: " + e.getMessage());
+                return;
+            }
+            saveLastFile(nextPath); // setDataSource is succeeded. So save here is not so bad.
+        }
+    }
+
+    private void playNext() {
+        playNextOrPrev("ASC");
+    }
+
+    private void playPrev() {
+        playNextOrPrev("DSC");
     }
 
     Thread playerThread = null;
