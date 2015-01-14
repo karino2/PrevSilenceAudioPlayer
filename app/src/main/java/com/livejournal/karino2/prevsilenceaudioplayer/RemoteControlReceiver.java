@@ -38,7 +38,12 @@ public class RemoteControlReceiver extends BroadcastReceiver {
                 } else if (KeyEvent.KEYCODE_MEDIA_PREVIOUS == event.getKeyCode()) {
                     PlayerService.startActionPrevWithDelay(context);
                     abortBroadcast();
-                    showDebugMessage(context, "prev recived");
+                    showDebugMessage(context, "prev received");
+                    return;
+                } else if (KeyEvent.KEYCODE_MEDIA_NEXT == event.getKeyCode()) {
+                    PlayerService.startActionNext(context);
+                    abortBroadcast();
+                    showDebugMessage(context, "next received");
                     return;
                 }
             }

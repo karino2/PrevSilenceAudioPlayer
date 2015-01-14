@@ -23,8 +23,14 @@ public class AudioPlayer {
         pendingCommandExists = true;
     }
 
+    public void requestNext() {
+        pendingCommand = Command.NEXT;
+        pendingCommandExists = true;
+    }
+
     public interface StateChangedListener {
         void requestRestart();
+        void requestNext();
         void reachEnd();
     }
 
@@ -49,6 +55,7 @@ public class AudioPlayer {
         PREVIOUS,
         PREVIOUS_WITHDELAY,
         PAUSE,
+        NEXT,
         NEW_FILE
     }
 
@@ -163,6 +170,9 @@ public class AudioPlayer {
                 return;
             case PAUSE:
                 // do nothing.
+                return;
+            case NEXT:
+                listener.requestNext();
                 return;
         }
 

@@ -23,6 +23,7 @@ public class PlayerService extends Service {
     private static final String ACTION_PLAY = "com.livejournal.karino2.prevsilenceaudioplayer.action.PLAY";
     private static final String ACTION_STOP = "com.livejournal.karino2.prevsilenceaudioplayer.action.STOP";
     private static final String ACTION_PREV = "com.livejournal.karino2.prevsilenceaudioplayer.action.PREV";
+    private static final String ACTION_NEXT = "com.livejournal.karino2.prevsilenceaudioplayer.action.NEXT";
     private static final String ACTION_QUIT = "com.livejournal.karino2.prevsilenceaudioplayer.action.QUIT";
     private static final String ACTION_TOGGLE_PAUSE = "com.livejournal.karino2.prevsilenceaudioplayer.action.TOGGLE_PAUSE";
 
@@ -42,15 +43,24 @@ public class PlayerService extends Service {
         }
 
         @Override
+        public void requestNext() {
+            postPlayNext();
+        }
+
+        @Override
         public void reachEnd() {
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    playNext();
-                }
-            });
+            postPlayNext();
         }
     });
+
+    private void postPlayNext() {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                playNext();
+            }
+        });
+    }
 
     private void playNext() {
         ContentResolver resolver = getContentResolver();
@@ -164,6 +174,12 @@ public class PlayerService extends Service {
         context.startService(intent);
     }
 
+    public static void startActionNext(Context context) {
+        Intent intent = new Intent(context, PlayerService.class);
+        intent.setAction(ACTION_NEXT);
+        context.startService(intent);
+    }
+
     private SharedPreferences getPref() {
         return getSharedPreferences("pref", MODE_PRIVATE);
     }
@@ -241,10 +257,21 @@ public class PlayerService extends Service {
             } else if(ACTION_TOGGLE_PAUSE.equals(action)) {
                 handleActionTogglePause();
                 return START_STICKY;
+            } else if (ACTION_NEXT.equals(action)) {
+                handleActionNext();
+                return START_STICKY;
             }
         }
         showMessage("unknown start command.");
         return START_NOT_STICKY;
+    }
+
+    private void handleActionNext() {
+        if(audioPlayer.isRunning()) {
+            audioPlayer.requestNext();
+        } else {
+            playNext();
+        }
     }
 
     private void handleActionTogglePause() {
@@ -367,4 +394,5 @@ public class PlayerService extends Service {
 
         return Uri.parse(builder.toString());
     }
+
 }
