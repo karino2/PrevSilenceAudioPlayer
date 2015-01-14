@@ -24,6 +24,12 @@ public class PlayerActivity extends ActionBarActivity {
         return getPref().getString("LAST_PLAY", "");
     }
 
+    private void clearLastFile() {
+        getPref().edit()
+                .putString("LAST_PLAY", "")
+                .commit();
+    }
+
     void showMessage(String msg)
     {
         Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
@@ -42,6 +48,8 @@ public class PlayerActivity extends ActionBarActivity {
         s_isCreated = true;
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_player);
+
+        setTitle(R.string.main_title);
 
         Intent intent = getIntent();
         if(intent != null && intent.getAction() != null && intent.getAction().equals(Intent.ACTION_VIEW))
@@ -84,6 +92,28 @@ public class PlayerActivity extends ActionBarActivity {
             }
         });
 
+        findViewById(R.id.buttonChoose).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                chooseAudioFile();
+            }
+        });
+
+        findViewById(R.id.buttonClear).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showMessage("Clear saved path.");
+                clearLastFile();
+            }
+        });
+
+        findViewById(R.id.buttonPause).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PlayerService.startActionPlayOrPause(PlayerActivity.this);
+            }
+        });
+
 
     }
 
@@ -103,6 +133,7 @@ public class PlayerActivity extends ActionBarActivity {
         Intent i = new Intent();
         i.setAction(Intent.ACTION_GET_CONTENT);
         i.setType("audio/*");
+        i.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
         startActivityForResult(i, REQUEST_GET_AUDIO);
     }
 

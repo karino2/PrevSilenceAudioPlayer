@@ -83,6 +83,10 @@ public class PlayingState {
 
     long currentPos = 0;
 
+    public boolean isPlayReady() {
+        return playReady;
+    }
+
     public void ensurePrepare() throws IOException {
         if(!playReady)
             prepare();

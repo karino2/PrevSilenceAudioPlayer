@@ -43,4 +43,31 @@
         android:layout_alignTop="@+id/buttonPlay"
         android:layout_centerHorizontal="true" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pause"
+        android:id="@+id/buttonPause"
+        android:layout_marginTop="32dp"
+        android:layout_below="@+id/buttonPlay"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Choose"
+        android:id="@+id/buttonChoose"
+        android:layout_alignBottom="@+id/buttonPause"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Clear"
+        android:id="@+id/buttonClear"
+        android:layout_alignTop="@+id/buttonChoose"
+        android:layout_alignLeft="@+id/buttonStop"
+        android:layout_alignStart="@+id/buttonStop" />
+
 </RelativeLayout>

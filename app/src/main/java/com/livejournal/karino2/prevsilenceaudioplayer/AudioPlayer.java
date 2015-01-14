@@ -18,6 +18,11 @@ public class AudioPlayer {
         playingState.setLastAudioPath(lastAudioPath);
     }
 
+    public void requestPause() {
+        pendingCommand = Command.PAUSE;
+        pendingCommandExists = true;
+    }
+
     public interface RestartListener {
         void requestRestart();
     }
@@ -26,7 +31,11 @@ public class AudioPlayer {
     public void requestPrev(boolean withDelay) {
         if(!isRunning)
         {
-            Log.d("PrevSilence", "Prev: not running! ignore for a while.");
+            if(playingState.isPlayReady()) {
+                handleToPreviousOutsideLoop();
+                return;
+            }
+            Log.d("PrevSilence", "Prev: not playing! ignore for a while.");
             // listener.requestRestart();
             return;
         }
@@ -38,6 +47,7 @@ public class AudioPlayer {
         STOP,
         PREVIOUS,
         PREVIOUS_WITHDELAY,
+        PAUSE,
         NEW_FILE
     }
 
@@ -130,35 +140,38 @@ public class AudioPlayer {
 
     private void handlePendingCommand() throws IOException {
         pendingCommandExists = false;
-        if(pendingCommand == Command.STOP) {
-            playingState.finishPlaying();
-            return;
-        }
-        if(pendingCommand == Command.NEW_FILE) {
-            playingState.finishPlaying();
-            setAudioPath(pendingNewFile);
-            listener.requestRestart();
-            return ;
-        }
-        if(pendingCommand == Command.PREVIOUS) {
-            pendingSeekTo = playingState.getPreviousSilentEnd();
-            Log.d("PrevSilence", "Prev: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
-            // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
-            listener.requestRestart();
-            return;
-        }
-        if(pendingCommand == Command.PREVIOUS_WITHDELAY) {
-            long rawSeekTo = playingState.getPreviousSilentEnd();
-            pendingSeekTo = Math.max(rawSeekTo-500000, 0); // bluetooth become silent for a while when operate button. wait some time for this reason.
-            Log.d("PrevSilence", "Prev: get pendingSeekTo withDlay: " + pendingSeekTo + ", " + playingState.getCurrent());
-            // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
-            listener.requestRestart();
-            return;
+        switch(pendingCommand) {
+            case STOP:
+                playingState.finishPlaying();
+                return;
+            case NEW_FILE:
+                playingState.finishPlaying();
+                setAudioPath(pendingNewFile);
+                listener.requestRestart();
+                return ;
+            case PREVIOUS:
+                handleToPreviousOutsideLoop();
+                return;
+            case PREVIOUS_WITHDELAY:
+                long rawSeekTo = playingState.getPreviousSilentEnd();
+                pendingSeekTo = Math.max(rawSeekTo-500000, 0); // bluetooth become silent for a while when operate button. wait some time for this reason.
+                Log.d("PrevSilence", "Prev: get pendingSeekTo withDlay: " + pendingSeekTo + ", " + playingState.getCurrent());
+                // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
+                listener.requestRestart();
+                return;
+            case PAUSE:
+                // do nothing.
+                return;
         }
 
     }
 
-
+    private void handleToPreviousOutsideLoop() {
+        pendingSeekTo = playingState.getPreviousSilentEnd();
+        Log.d("PrevSilence", "Prev: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
+        // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
+        listener.requestRestart();
+    }
 
 
 }

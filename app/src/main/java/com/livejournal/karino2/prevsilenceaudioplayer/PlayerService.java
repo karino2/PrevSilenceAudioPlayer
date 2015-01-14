@@ -18,6 +18,7 @@ public class PlayerService extends Service {
     private static final String ACTION_STOP = "com.livejournal.karino2.prevsilenceaudioplayer.action.STOP";
     private static final String ACTION_PREV = "com.livejournal.karino2.prevsilenceaudioplayer.action.PREV";
     private static final String ACTION_QUIT = "com.livejournal.karino2.prevsilenceaudioplayer.action.QUIT";
+    private static final String ACTION_TOGGLE_PAUSE = "com.livejournal.karino2.prevsilenceaudioplayer.action.TOGGLE_PAUSE";
 
     private static final String EXTRA_PARAM_FILE_PATH = "com.livejournal.karino2.prevsilenceaudioplayer.extra.PATH";
 
@@ -54,8 +55,7 @@ public class PlayerService extends Service {
             return;
         }
         Intent intent = new Intent(context, PlayerService.class);
-        intent.setAction(ACTION_PLAY);
-        intent.putExtra(EXTRA_PARAM_FILE_PATH, lastFile);
+        intent.setAction(ACTION_TOGGLE_PAUSE);
         context.startService(intent);
     }
 
@@ -163,10 +163,21 @@ public class PlayerService extends Service {
                 audioPlayer.requestStop();
                 stopSelf();
                 return START_NOT_STICKY;
+            } else if(ACTION_TOGGLE_PAUSE.equals(action)) {
+                handleActionTogglePause();
+                return START_STICKY;
             }
         }
         showMessage("unknown start command.");
         return START_NOT_STICKY;
+    }
+
+    private void handleActionTogglePause() {
+        if(audioPlayer.isRunning()) {
+            audioPlayer.requestPause();
+        } else {
+            startPlayThread();
+        }
     }
 
     private void handleActionPrev(boolean withDelay) {
@@ -223,17 +234,23 @@ public class PlayerService extends Service {
                   try {
                       audioPlayer.play();
                   } catch (IOException e) {
-                      final String msg = e.getMessage();
-                      handler.post(new Runnable() {
-                          @Override
-                          public void run() {
-                              showDebugMessage("play throw exception: " + msg);
-                          }
-                      });
+                      postShowDebugMessage("play throw IO exception: " + e.getMessage());
+                  } catch (IllegalArgumentException ie) {
+                      postShowDebugMessage("play throw IllArg exception: " + ie.getMessage());
+
                   }
               }
           });
         playerThread.start();
+    }
+
+    private void postShowDebugMessage(final String msg) {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                showDebugMessage(msg);
+            }
+        });
     }
 
     @Override
