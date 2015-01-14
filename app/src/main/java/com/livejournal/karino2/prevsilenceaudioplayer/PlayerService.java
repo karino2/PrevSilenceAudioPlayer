@@ -165,7 +165,7 @@ public class PlayerService extends Service {
      */
     private void handleActionPlay(String audioFilePath)  {
         try {
-            if(playerThread == null) {
+            if(!audioPlayer.isRunning()) {
               audioPlayer.setAudioPath(audioFilePath);
                 startPlayThread();
             } else {
