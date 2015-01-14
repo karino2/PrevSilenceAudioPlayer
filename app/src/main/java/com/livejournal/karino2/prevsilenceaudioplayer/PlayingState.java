@@ -33,6 +33,9 @@ public class PlayingState {
 
     boolean audioPathSet = false;
     public void setAudioPath(String audioFilePath) throws IOException {
+        if(isPlayReady()) {
+            finishPlaying();
+        }
         extractor = new MediaExtractor();
         extractor.setDataSource(context, Uri.parse(audioFilePath), null);
         audioPathSet = true;

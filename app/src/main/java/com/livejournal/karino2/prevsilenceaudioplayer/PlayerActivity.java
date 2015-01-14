@@ -133,7 +133,6 @@ public class PlayerActivity extends ActionBarActivity {
         Intent i = new Intent();
         i.setAction(Intent.ACTION_GET_CONTENT);
         i.setType("audio/*");
-        i.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
         startActivityForResult(i, REQUEST_GET_AUDIO);
     }
 
@@ -159,7 +158,7 @@ public class PlayerActivity extends ActionBarActivity {
         switch (requestCode) {
             case REQUEST_GET_AUDIO:
                 if(resultCode == RESULT_OK) {
-                    String path = data.getData().getPath();
+                    String path = data.getData().toString();
                     setPathToEditText(path);
                 }
                 return;
