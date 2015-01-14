@@ -81,7 +81,7 @@ public class PlayerService extends Service {
                 new String[] {
                         parent.getPath()+"%"
                 },
-                MediaStore.Audio.Media._ID
+                MediaStore.Audio.Media.DATA + " ASC"
                 );
         try {
             if(!cursor.moveToFirst()) {
