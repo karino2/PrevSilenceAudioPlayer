@@ -13,6 +13,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.squareup.otto.Subscribe;
+
 
 public class PlayerActivity extends ActionBarActivity {
 
@@ -39,6 +41,22 @@ public class PlayerActivity extends ActionBarActivity {
 
     Handler handler = new Handler();
 
+    @Subscribe
+    public void onPlayFileChanged(PlayerService.PlayFileChangedEvent event) {
+        setPathToEditText(event.getFile().toString());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        BusProvider.getInstance().register(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        BusProvider.getInstance().unregister(this);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

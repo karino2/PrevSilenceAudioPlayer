@@ -29,6 +29,16 @@ public class PlayerService extends Service {
 
     private static final String EXTRA_PARAM_FILE_PATH = "com.livejournal.karino2.prevsilenceaudioplayer.extra.PATH";
 
+    public static class PlayFileChangedEvent {
+        Uri file;
+        public Uri getFile() {
+            return file;
+        }
+        public PlayFileChangedEvent(Uri filePath) {
+            file = filePath;
+        }
+    }
+
 
     AudioPlayer audioPlayer = new AudioPlayer(new AudioPlayer.StateChangedListener() {
         @Override
@@ -129,6 +139,7 @@ public class PlayerService extends Service {
                 return;
             }
             saveLastFile(nextPath); // setDataSource is succeeded. So save here is not so bad.
+            BusProvider.getInstance().post(new PlayFileChangedEvent(Uri.parse(nextPath)));
         }
     }
 
@@ -141,6 +152,7 @@ public class PlayerService extends Service {
         String nextPath = findNextOrPrev(Uri.parse(getLastFile()), "DESC");
         audioPlayer.setAudioPath(nextPath);
         saveLastFile(nextPath);
+        BusProvider.getInstance().post(new PlayFileChangedEvent(Uri.parse(nextPath)));
     }
 
     Thread playerThread = null;
