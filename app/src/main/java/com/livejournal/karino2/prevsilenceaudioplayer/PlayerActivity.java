@@ -1,16 +1,19 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.otto.Subscribe;
@@ -43,7 +46,7 @@ public class PlayerActivity extends ActionBarActivity {
 
     @Subscribe
     public void onPlayFileChanged(PlayerService.PlayFileChangedEvent event) {
-        setPathToEditText(event.getFile().toString());
+        updateAudioDisplayNameFromUriString(event.getFile().toString());
     }
 
     @Override
@@ -73,17 +76,18 @@ public class PlayerActivity extends ActionBarActivity {
         {
             Uri uri = intent.getData();
             String path = uri.toString(); /* uri.getPath() */
-            setPathToEditText(path);
+            updateAudioDisplayNameFromUriString(path);
             PlayerService.startActionPlay(this, uri.toString());
         } else {
-            setPathToEditText(getLastFile());
+            updateAudioDisplayNameFromUriString(getLastFile());
             if("".equals(getLastFile())) {
                 postChooseAudio();
             }
         }
 
 
-        findViewById(R.id.buttonPlay).setOnClickListener(new View.OnClickListener() {
+        /*
+        findViewById(R.id.imageButtonPlayOrPause).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String path = ((EditText)findViewById(R.id.editTextPath)).getText().toString();
@@ -101,15 +105,23 @@ public class PlayerActivity extends ActionBarActivity {
                 PlayerService.startActionStop(PlayerActivity.this);
             }
         });
+        */
 
-        findViewById(R.id.buttonPrev).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.imageButtonPrev).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 PlayerService.startActionPrev(PlayerActivity.this);
             }
         });
 
-        findViewById(R.id.buttonChoose).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.imageButtonNext).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PlayerService.startActionNext(PlayerActivity.this);
+            }
+        });
+
+        findViewById(R.id.imageButtonChoose).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 chooseAudioFile();
@@ -124,7 +136,7 @@ public class PlayerActivity extends ActionBarActivity {
             }
         });
 
-        findViewById(R.id.buttonPause).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.imageButtonPlayOrPause).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 PlayerService.startActionPlayOrPause(PlayerActivity.this);
@@ -153,8 +165,59 @@ public class PlayerActivity extends ActionBarActivity {
         startActivityForResult(i, REQUEST_GET_AUDIO);
     }
 
-    private void setPathToEditText(String path) {
-        ((EditText)findViewById(R.id.editTextPath)).setText(path);
+    private String findDisplayNameFromUri(Uri uri) {
+        ContentResolver resolver = getContentResolver();
+
+        Cursor cursor;
+        if(uri.getScheme().equals("file")) {
+
+            cursor = resolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    new String[]{
+                            MediaStore.Audio.Media.TITLE,
+                            MediaStore.Audio.Media.DISPLAY_NAME,
+                            MediaStore.Audio.Media.DATA
+                    },
+                    MediaStore.Audio.Media.DATA + " = ?",
+                    new String[]{
+                            uri.getPath()
+                    },
+                    null
+            );
+        }else {
+            // may be other possibilities. but I don't know.
+            cursor = resolver.query(uri,
+                    new String[]{
+                            MediaStore.Audio.Media.TITLE,
+                            MediaStore.Audio.Media.DISPLAY_NAME,
+                            MediaStore.Audio.Media.DATA
+                    },
+                    null,
+                    null,
+                    null
+            );
+        }
+        try {
+            if (!cursor.moveToFirst()) {
+                return "No Name";
+            }
+            return cursor.getString(1);
+        } finally {
+            cursor.close();
+        }
+    }
+
+
+    private void updateAudioDisplayNameFromUriString(String uriStr) {
+        if(uriStr.equals("")) {
+            updateDisplayName("No audio selected.");
+        } else {
+            String displayName = findDisplayNameFromUri(Uri.parse(uriStr));
+            updateDisplayName(displayName);
+        }
+    }
+
+    private void updateDisplayName(String displayName) {
+        ((TextView)findViewById(R.id.textViewName)).setText(displayName);
     }
 
     @Override
@@ -175,7 +238,8 @@ public class PlayerActivity extends ActionBarActivity {
             case REQUEST_GET_AUDIO:
                 if(resultCode == RESULT_OK) {
                     String path = data.getData().toString();
-                    setPathToEditText(path);
+                    updateAudioDisplayNameFromUriString(path);
+                    PlayerService.startActionPlay(this, path);
                 }
                 return;
 

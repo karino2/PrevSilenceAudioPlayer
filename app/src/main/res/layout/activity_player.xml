@@ -4,62 +4,52 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".PlayerActivity">
-
-    <EditText
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/editTextPath"
+        android:text="No Audio"
+        android:id="@+id/textViewName"
         android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:text="/storage/extSdCard/test.mp3" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Play"
-        android:id="@+id/buttonPlay"
-        android:layout_below="@+id/editTextPath"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="43dp" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="STOP"
-        android:id="@+id/buttonStop"
-        android:layout_alignBottom="@+id/buttonPlay"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="PREV"
-        android:id="@+id/buttonPrev"
-        android:layout_alignTop="@+id/buttonPlay"
         android:layout_centerHorizontal="true" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Pause"
-        android:id="@+id/buttonPause"
-        android:layout_marginTop="32dp"
-        android:layout_below="@+id/buttonPlay"
+    <LinearLayout android:orientation="horizontal"
+        android:layout_below="@id/textViewName"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/linearLayout">
+
+    <ImageButton
+        android:layout_weight="1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:id="@+id/imageButtonPrev"
+        android:src="@drawable/button_prev"
+        android:scaleType="centerInside" />
+    <ImageButton
+        android:layout_weight="1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:id="@+id/imageButtonPlayOrPause"
+        android:src="@drawable/button_play"
+        android:scaleType="centerInside" />
+    <ImageButton
+        android:layout_weight="1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:id="@+id/imageButtonNext"
+        android:src="@drawable/button_next"
+        android:scaleType="centerInside" />
+    </LinearLayout>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Choose"
         android:id="@+id/buttonChoose"
-        android:layout_alignBottom="@+id/buttonPause"
-        android:layout_centerHorizontal="true" />
+        android:layout_alignParentBottom="true" />
 
     <Button
         android:layout_width="wrap_content"
@@ -67,7 +57,19 @@
         android:text="Clear"
         android:id="@+id/buttonClear"
         android:layout_alignTop="@+id/buttonChoose"
-        android:layout_alignLeft="@+id/buttonStop"
-        android:layout_alignStart="@+id/buttonStop" />
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <ImageButton
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:id="@+id/imageButtonChoose"
+        android:layout_below="@+id/linearLayout"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="74dp"
+        android:src="@drawable/button_browse"
+        android:scaleType="centerInside" />
+
 
 </RelativeLayout>
