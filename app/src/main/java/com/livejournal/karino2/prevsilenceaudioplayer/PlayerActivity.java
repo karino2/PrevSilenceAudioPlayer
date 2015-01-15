@@ -200,6 +200,8 @@ public class PlayerActivity extends ActionBarActivity {
             if (!cursor.moveToFirst()) {
                 return "No Name";
             }
+            // In my audio file, most of title is mojibake. So I don't want to use it.
+            // showMessage("title: " + cursor.getString(0));
             return cursor.getString(1);
         } finally {
             cursor.close();
