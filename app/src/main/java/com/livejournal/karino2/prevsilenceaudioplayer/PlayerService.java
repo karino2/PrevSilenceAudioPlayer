@@ -39,6 +39,13 @@ public class PlayerService extends Service {
         }
     }
 
+    public static class PlayStateEvent {
+        public PlayStateEvent(){}
+    }
+    public static class PauseStateEvent {
+        public PauseStateEvent(){}
+    }
+
 
     AudioPlayer audioPlayer = new AudioPlayer(new AudioPlayer.StateChangedListener() {
         @Override
@@ -303,8 +310,10 @@ public class PlayerService extends Service {
 
     private void handleActionTogglePause() {
         if(audioPlayer.isRunning()) {
+            BusProvider.getInstance().post(new PauseStateEvent());
             audioPlayer.requestPause();
         } else {
+            BusProvider.getInstance().post(new PlayStateEvent());
             startPlayThread();
         }
     }

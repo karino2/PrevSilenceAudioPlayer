@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -47,6 +48,16 @@ public class PlayerActivity extends ActionBarActivity {
     @Subscribe
     public void onPlayFileChanged(PlayerService.PlayFileChangedEvent event) {
         updateAudioDisplayNameFromUriString(event.getFile().toString());
+    }
+
+    @Subscribe
+    public void onPlayState(PlayerService.PlayStateEvent event) {
+        ((ImageButton)findViewById(R.id.imageButtonPlayOrPause)).setImageResource(R.drawable.button_pause);
+    }
+
+    @Subscribe
+    public void onPauseState(PlayerService.PauseStateEvent event) {
+        ((ImageButton)findViewById(R.id.imageButtonPlayOrPause)).setImageResource(R.drawable.button_play);
     }
 
     @Override
