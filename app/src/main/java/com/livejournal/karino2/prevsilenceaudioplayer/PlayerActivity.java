@@ -40,12 +40,11 @@ public class PlayerActivity extends ActionBarActivity {
     Handler handler = new Handler();
 
 
-    public static boolean s_isCreated = false;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        s_isCreated = true;
+        RemoteControlReceiver.ensureReceiverRegistered(this);
+
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_player);
 
@@ -142,7 +141,6 @@ public class PlayerActivity extends ActionBarActivity {
 
     @Override
     protected void onDestroy() {
-        s_isCreated = false;
         super.onDestroy();
     }
 

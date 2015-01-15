@@ -222,21 +222,14 @@ public class PlayerService extends Service {
     }
 
 
-    boolean receiverRegistered = false;
-    ComponentName receiverName;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         audioPlayer.setContext(this);
         audioPlayer.setLastAudioPath(getLastFile());
 
-        if(!receiverRegistered) {
-            receiverRegistered = true;
+        RemoteControlReceiver.ensureReceiverRegistered(this);
 
-            AudioManager am = (AudioManager)getSystemService(AUDIO_SERVICE);
-            receiverName = new ComponentName(this, RemoteControlReceiver.class);
-            am.registerMediaButtonEventReceiver(receiverName);
-            RemoteControlReceiver.setServiceRunning(true);
 
 
             /*
@@ -259,7 +252,6 @@ public class PlayerService extends Service {
                 showMessage("can't gain audio focus");
             }
             */
-        }
 
 
         if (intent != null) {
@@ -393,11 +385,6 @@ public class PlayerService extends Service {
 
     @Override
     public void onDestroy() {
-        if(receiverRegistered) {
-            AudioManager am = (AudioManager)getSystemService(AUDIO_SERVICE);
-            am.unregisterMediaButtonEventReceiver(receiverName);
-            RemoteControlReceiver.setServiceRunning(false);
-        }
         super.onDestroy();
     }
 
