@@ -4,6 +4,8 @@ import android.content.Context;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by karino on 1/12/15.
@@ -19,13 +21,11 @@ public class AudioPlayer {
     }
 
     public void requestPause() {
-        pendingCommand = Command.PAUSE;
-        pendingCommandExists = true;
+        pushCommand(Command.CommandType.PAUSE);
     }
 
     public void requestNext() {
-        pendingCommand = Command.NEXT;
-        pendingCommandExists = true;
+        pushCommand(Command.CommandType.NEXT);
     }
 
     public void gotoHead() {
@@ -36,6 +36,25 @@ public class AudioPlayer {
         void requestRestart();
         void requestNext();
         void reachEnd();
+    }
+
+    List<Command> commandQueue = new ArrayList<>();
+    synchronized boolean isPendingCommandExists() {
+        return commandQueue.size() != 0;
+    }
+
+    synchronized Command popCommand() {
+        Command ret = commandQueue.get(0);
+        commandQueue.remove(0);
+        return ret;
+    }
+
+    synchronized void pushCommand(Command command) {
+        commandQueue.add(command);
+    }
+
+    synchronized void pushCommand(Command.CommandType typ) {
+        pushCommand(Command.createCommand(typ));
     }
 
 
@@ -50,18 +69,9 @@ public class AudioPlayer {
             // listener.requestRestart();
             return;
         }
-        pendingCommandExists = true;
-        pendingCommand = withDelay? Command.PREVIOUS_WITHDELAY : Command.PREVIOUS;
+        pushCommand(withDelay? Command.CommandType.PREVIOUS_WITHDELAY: Command.CommandType.PREVIOUS);
     }
 
-    enum Command {
-        STOP,
-        PREVIOUS,
-        PREVIOUS_WITHDELAY,
-        PAUSE,
-        NEXT,
-        NEW_FILE
-    }
 
     boolean isRunning = false;
 
@@ -74,14 +84,9 @@ public class AudioPlayer {
         playingState = new PlayingState();
     }
 
-    String pendingNewFile;
-
-
     public void playAudio(String audioFilePath) throws IOException {
         if(isRunning) {
-            pendingCommandExists = true;
-            pendingCommand = Command.NEW_FILE;
-            pendingNewFile = audioFilePath;
+            pushCommand(Command.createNewFileCommand(audioFilePath));
         }else {
             setAudioPath(audioFilePath);
             play();
@@ -93,15 +98,6 @@ public class AudioPlayer {
         playingState.prepare();
     }
 
-
-
-
-
-
-
-    Command pendingCommand;
-    boolean pendingCommandExists = false;
-
     public boolean isRunning() {
         return isRunning;
     }
@@ -109,8 +105,7 @@ public class AudioPlayer {
 
     public void requestStop() {
         if(isRunning) {
-            pendingCommandExists = true;
-            pendingCommand = Command.STOP;
+            pushCommand(Command.CommandType.STOP);
         }
     }
 
@@ -118,8 +113,6 @@ public class AudioPlayer {
 
     public void play() throws IOException {
         isRunning = true;
-        pendingCommandExists = false;
-
 
         try {
             playingState.ensurePrepare();
@@ -132,14 +125,14 @@ public class AudioPlayer {
             }
 
 
-            while (!pendingCommandExists && !playingState.isEnd()) {
+            while (!isPendingCommandExists() && !playingState.isEnd()) {
                 playingState.playOne();
             }
 
 
             // analyzer.debugPrint();
 
-            if(pendingCommandExists) {
+            if(isPendingCommandExists()) {
                 handlePendingCommand();
             } else {
                 playingState.finishPlaying();
@@ -153,14 +146,14 @@ public class AudioPlayer {
 
 
     private void handlePendingCommand() throws IOException {
-        pendingCommandExists = false;
-        switch(pendingCommand) {
+        Command command = popCommand();
+        switch(command.getCommandType()) {
             case STOP:
                 playingState.finishPlaying();
                 return;
             case NEW_FILE:
                 playingState.finishPlaying();
-                setAudioPath(pendingNewFile);
+                setAudioPath(command.getFilePath());
                 listener.requestRestart();
                 return ;
             case PREVIOUS:
