@@ -15,8 +15,11 @@ import android.os.Process;
 import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.ImageButton;
 import android.widget.RemoteViews;
 import android.widget.Toast;
+
+import com.squareup.otto.Subscribe;
 
 import java.io.IOException;
 import java.util.List;
@@ -213,16 +216,20 @@ public class PlayerService extends Service {
     }
 
     public static void startActionPrevWithDelay(Context context) {
-        Intent intent = new Intent(context, PlayerService.class);
-        intent.setAction(ACTION_PREV);
+        Intent intent = s_createPrevIntent(context);
         intent.putExtra("DELAY", true);
         context.startService(intent);
     }
 
-
-    public static void startActionPrev(Context context) {
+    public static Intent s_createPrevIntent(Context context) {
         Intent intent = new Intent(context, PlayerService.class);
         intent.setAction(ACTION_PREV);
+        return intent;
+    }
+
+
+    public static void startActionPrev(Context context) {
+        Intent intent = s_createPrevIntent(context);
         context.startService(intent);
     }
 
@@ -238,10 +245,15 @@ public class PlayerService extends Service {
     }
 
     public static void startActionNext(Context context, boolean withDelay) {
-        Intent intent = new Intent(context, PlayerService.class);
-        intent.setAction(ACTION_NEXT);
+        Intent intent = s_createNextIntent(context);
         intent.putExtra("DELAY", withDelay);
         context.startService(intent);
+    }
+
+    public static Intent s_createNextIntent(Context context) {
+        Intent intent = new Intent(context, PlayerService.class);
+        intent.setAction(ACTION_NEXT);
+        return intent;
     }
 
     private SharedPreferences getPref() {
@@ -431,7 +443,14 @@ public class PlayerService extends Service {
     }
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+        BusProvider.getInstance().register(this);
+    }
+
+    @Override
     public void onDestroy() {
+        BusProvider.getInstance().unregister(this);
         hideNotification();
         super.onDestroy();
     }
@@ -458,27 +477,51 @@ public class PlayerService extends Service {
 
 
     void hideNotification() {
-        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager notificationManager = getNotificationManager();
         notificationManager.cancel(NOTIFICATION_ID);
 
         notificationView = null;
 
     }
 
+    private NotificationManager getNotificationManager() {
+        return (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+    }
+
+    @Subscribe
+    public void onPlayFileChanged(PlayerService.PlayFileChangedEvent event) {
+        if(notificationView != null) {
+            notificationView.setTextViewText(R.id.textViewNotificationTitle, findDisplayNameFromUriStr(event.getFile().toString()));
+            getNotificationManager().notify(NOTIFICATION_ID, notification);
+        }
+    }
+
+    @Subscribe
+    public void onPlayState(PlayerService.PlayStateEvent event) {
+        if(notificationView != null) {
+            notificationView.setImageViewResource(R.id.imageButtonNotificationPlayOrPause, R.drawable.button_pause_small);
+            getNotificationManager().notify(NOTIFICATION_ID, notification);
+        }
+    }
+
+    @Subscribe
+    public void onPauseState(PlayerService.PauseStateEvent event) {
+        if(notificationView != null) {
+            notificationView.setImageViewResource(R.id.imageButtonNotificationPlayOrPause, R.drawable.button_play_small);
+            getNotificationManager().notify(NOTIFICATION_ID, notification);
+        }
+    }
+
     RemoteViews notificationView;
+    Notification notification;
 
     void showNotification() {
-        String title;
-        String lastFileStr = getLastFile();
-        if(lastFileStr.equals("")) {
-            title ="No file selected.";
-        } else {
-            title = PlayerActivity.s_findDisplayNameFromUri(this, Uri.parse(lastFileStr));
-        }
+        String title = findDisplayNameFromUriStr(getLastFile());
 
         PendingIntent ppauseIntent = createPendingIntent(s_createTogglePauseIntent(this));
         PendingIntent quitIntent = createPendingIntent(s_createQuitIntent(this));
-
+        PendingIntent prevIntent = createPendingIntent(s_createPrevIntent(this));
+        PendingIntent nextIntent = createPendingIntent(s_createNextIntent(this));
 
 
 
@@ -486,18 +529,30 @@ public class PlayerService extends Service {
         notificationView.setTextViewText(R.id.textViewNotificationTitle, title);
         notificationView.setOnClickPendingIntent(R.id.imageButtonNotificationPlayOrPause, ppauseIntent);
         notificationView.setOnClickPendingIntent(R.id.imageButtonNotificationCollapse, quitIntent);
+        notificationView.setOnClickPendingIntent(R.id.imageButtonNotificationPrev, prevIntent);
+        notificationView.setOnClickPendingIntent(R.id.imageButtonNotificationNext, nextIntent);
 
 
 
-        Notification notification = new NotificationCompat.Builder(this)
+        notification = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.notif_icon)
                 .setOngoing(true)
                 .setAutoCancel(false)
                 .setContent(notificationView)
                 .build();
 
-        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager notificationManager = getNotificationManager();
         notificationManager.notify(NOTIFICATION_ID, notification);
+    }
+
+    private String findDisplayNameFromUriStr(String lastFileStr) {
+        String title;
+        if(lastFileStr.equals("")) {
+            title ="No file selected.";
+        } else {
+            title = PlayerActivity.s_findDisplayNameFromUri(this, Uri.parse(lastFileStr));
+        }
+        return title;
     }
 
     private PendingIntent createPendingIntent(Intent intent) {
