@@ -223,9 +223,10 @@ public class PlayerService extends Service {
         context.startService(intent);
     }
 
-    public static void startActionNext(Context context) {
+    public static void startActionNext(Context context, boolean withDelay) {
         Intent intent = new Intent(context, PlayerService.class);
         intent.setAction(ACTION_NEXT);
+        intent.putExtra("DELAY", withDelay);
         context.startService(intent);
     }
 
@@ -291,12 +292,13 @@ public class PlayerService extends Service {
             } else if(ACTION_QUIT.equals(action)) {
                 audioPlayer.requestStop();
                 stopSelf();
+                RemoteControlReceiver.unregisterReceiver(this);
                 return START_NOT_STICKY;
             } else if(ACTION_TOGGLE_PAUSE.equals(action)) {
                 handleActionTogglePause(intent.getBooleanExtra("DELAY", false));
                 return START_STICKY;
             } else if (ACTION_NEXT.equals(action)) {
-                handleActionNext();
+                handleActionNext(intent.getBooleanExtra("DELAY", false));
                 return START_STICKY;
             }
         }
@@ -304,9 +306,9 @@ public class PlayerService extends Service {
         return START_NOT_STICKY;
     }
 
-    private void handleActionNext() {
+    private void handleActionNext(boolean withDelay) {
         if(isPlayerRunning()) {
-            audioPlayer.requestNext();
+            audioPlayer.requestNext(withDelay);
         } else {
             playNext();
         }

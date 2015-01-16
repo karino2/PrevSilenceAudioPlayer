@@ -128,7 +128,7 @@ public class PlayerActivity extends ActionBarActivity {
         findViewById(R.id.imageButtonNext).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                PlayerService.startActionNext(PlayerActivity.this);
+                PlayerService.startActionNext(PlayerActivity.this, false);
             }
         });
 

@@ -24,7 +24,10 @@ public class AudioPlayer {
         pushCommand(Command.CommandType.PAUSE);
     }
 
-    public void requestNext() {
+    public void requestNext(boolean withDelay) {
+        if(withDelay) {
+            pushMediaButtonWaitCommand();
+        }
         pushCommand(Command.CommandType.NEXT);
     }
 
@@ -174,7 +177,8 @@ public class AudioPlayer {
                 // do nothing.
                 return;
             case NEXT:
-                listener.requestNext();
+                handleToNextOutsideLoop();
+                // listener.requestNext();
                 return;
         }
 
@@ -187,5 +191,10 @@ public class AudioPlayer {
         listener.requestRestart();
     }
 
+    private void handleToNextOutsideLoop() {
+        pendingSeekTo = playingState.getNextSilentEnd();
+        Log.d("PrevSilence", "Next: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
+        listener.requestRestart();
+    }
 
 }

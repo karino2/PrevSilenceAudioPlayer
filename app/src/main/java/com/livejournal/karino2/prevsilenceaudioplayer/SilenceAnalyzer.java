@@ -89,6 +89,18 @@ public class SilenceAnalyzer {
         return Math.max(0, prev.getEnd() - MARGIN_NS);
     }
 
+    // best effort. If there are no available next, return lastAnalyzedUS.
+    public long getNextSilentEnd() {
+        if(silentSectionList.size() == 0)
+            return Math.max(0, lastAnalyzedUS-MARGIN_NS);
+        long currentUS = sampleCountToUS(current);
+        for(SilentSection cur : silentSectionList) {
+            if (cur.getEnd() > currentUS)
+                return Math.max(0, cur.getEnd() - MARGIN_NS);
+        }
+        return Math.max(0, lastAnalyzedUS-MARGIN_NS);
+    }
+
 
 
     int sampleRate = 44100;

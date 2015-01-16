@@ -11,12 +11,22 @@ import android.widget.Toast;
 
 public class RemoteControlReceiver extends BroadcastReceiver {
     static boolean is_registerd = false;
+    static ComponentName receiverName;
     public static void ensureReceiverRegistered(Context context) {
         if(!is_registerd) {
             AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            am.registerMediaButtonEventReceiver(new ComponentName(context, RemoteControlReceiver.class));
+            receiverName  = new ComponentName(context, RemoteControlReceiver.class);;
+            am.registerMediaButtonEventReceiver(receiverName);
             is_registerd = true;
         }
+    }
+    public static void unregisterReceiver(Context context) {
+        if(is_registerd) {
+            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            am.unregisterMediaButtonEventReceiver(receiverName);
+            is_registerd = false;
+        }
+
     }
 
 
@@ -45,7 +55,7 @@ public class RemoteControlReceiver extends BroadcastReceiver {
                 showDebugMessage(context, "prev received");
                 return;
             } else if (KeyEvent.KEYCODE_MEDIA_NEXT == event.getKeyCode()) {
-                PlayerService.startActionNext(context);
+                PlayerService.startActionNext(context, true);
                 abortBroadcast();
                 showDebugMessage(context, "next received");
                 return;
