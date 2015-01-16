@@ -21,7 +21,6 @@ import java.util.List;
 
 public class PlayerService extends Service {
     private static final String ACTION_PLAY = "com.livejournal.karino2.prevsilenceaudioplayer.action.PLAY";
-    private static final String ACTION_STOP = "com.livejournal.karino2.prevsilenceaudioplayer.action.STOP";
     private static final String ACTION_PREV = "com.livejournal.karino2.prevsilenceaudioplayer.action.PREV";
     private static final String ACTION_NEXT = "com.livejournal.karino2.prevsilenceaudioplayer.action.NEXT";
     private static final String ACTION_QUIT = "com.livejournal.karino2.prevsilenceaudioplayer.action.QUIT";
@@ -47,7 +46,7 @@ public class PlayerService extends Service {
     }
 
     boolean duringWait = false;
-    final int MEDIABUTTON_WAIT_DELAY = 500; // ms
+    final int MEDIABUTTON_WAIT_DELAY = 700; // ms
 
     AudioPlayer audioPlayer = new AudioPlayer(new AudioPlayer.StateChangedListener() {
         @Override
@@ -204,16 +203,6 @@ public class PlayerService extends Service {
         context.startService(intent);
     }
 
-    /**
-     * Starts this service to perform action STOP audio. If
-     * the service is already performing a task this action will be queued.
-     */
-    public static void startActionStop(Context context) {
-        Intent intent = new Intent(context, PlayerService.class);
-        intent.setAction(ACTION_STOP);
-        context.startService(intent);
-    }
-
     public static void startActionPrevWithDelay(Context context) {
         Intent intent = new Intent(context, PlayerService.class);
         intent.setAction(ACTION_PREV);
@@ -296,9 +285,6 @@ public class PlayerService extends Service {
             if (ACTION_PLAY.equals(action)) {
                 handleActionPlay(intent.getStringExtra(EXTRA_PARAM_FILE_PATH));
                 return START_STICKY;
-            } else if (ACTION_STOP.equals(action)) {
-                handleActionStop();
-                return START_NOT_STICKY;
             } else if(ACTION_PREV.equals(action)) {
                 handleActionPrev(intent.getBooleanExtra("DELAY", false));
                 return START_STICKY;
@@ -428,16 +414,6 @@ public class PlayerService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-    }
-
-    /**
-     * Handle action STOP in the provided background thread with the provided
-     * parameters.
-     */
-    private void handleActionStop() {
-        if(isPlayerRunning()) {
-            audioPlayer.requestStop();
-        }
     }
 
     private boolean isPlayerRunning() {
