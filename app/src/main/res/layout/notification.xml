@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:id="@+id/textViewNotificationTitle" android:text="Title" />
+    </LinearLayout>
+    <ImageButton android:layout_height="wrap_content" android:layout_width="wrap_content"
+        android:src="@drawable/button_prev_small" android:id="@+id/imageButtonNotificationPrev" />
+    <ImageButton android:layout_height="wrap_content" android:layout_width="wrap_content"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp"
+        android:src="@drawable/button_play_small" android:id="@+id/imageButtonNotificationPlayOrPause" />
+    <ImageButton android:layout_height="wrap_content" android:layout_width="wrap_content"
+        android:src="@drawable/button_next_small" android:id="@+id/imageButtonNotificationNext" />
+    <ImageButton android:layout_height="wrap_content" android:layout_width="wrap_content"
+        android:src="@drawable/button_collapse_small" android:id="@+id/imageButtonNotificationCollapse"
+        android:paddingLeft="15dp"
+        android:paddingRight="10dp"/>
+</LinearLayout>

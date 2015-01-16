@@ -1,22 +1,24 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
-import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.media.AudioManager;
 import android.net.Uri;
 import android.os.*;
 import android.os.Process;
 import android.provider.MediaStore;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class PlayerService extends Service {
@@ -37,6 +39,8 @@ public class PlayerService extends Service {
             file = filePath;
         }
     }
+
+    final static int NOTIFICATION_ID = R.layout.notification;
 
     public static class PlayStateEvent {
         public PlayStateEvent(){}
@@ -196,11 +200,16 @@ public class PlayerService extends Service {
             s_showMessage(context, "No audio set. Please choose audio first.");
             return;
         }
-        Intent intent = new Intent(context, PlayerService.class);
-        intent.setAction(ACTION_TOGGLE_PAUSE);
+        Intent intent = s_createTogglePauseIntent(context);
         if(withDelay)
             intent.putExtra("DELAY", true);
         context.startService(intent);
+    }
+
+    public static Intent s_createTogglePauseIntent(Context context) {
+        Intent intent = new Intent(context, PlayerService.class);
+        intent.setAction(ACTION_TOGGLE_PAUSE);
+        return intent;
     }
 
     public static void startActionPrevWithDelay(Context context) {
@@ -218,9 +227,14 @@ public class PlayerService extends Service {
     }
 
     public static void startActionQuit(Context context) {
+        Intent intent = s_createQuitIntent(context);
+        context.startService(intent);
+    }
+
+    public static Intent s_createQuitIntent(Context context) {
         Intent intent = new Intent(context, PlayerService.class);
         intent.setAction(ACTION_QUIT);
-        context.startService(intent);
+        return intent;
     }
 
     public static void startActionNext(Context context, boolean withDelay) {
@@ -257,7 +271,10 @@ public class PlayerService extends Service {
 
         RemoteControlReceiver.ensureReceiverRegistered(this);
 
-
+        if(notificationView == null)
+        {
+            showNotification();
+        }
 
             /*
 
@@ -415,6 +432,7 @@ public class PlayerService extends Service {
 
     @Override
     public void onDestroy() {
+        hideNotification();
         super.onDestroy();
     }
 
@@ -436,6 +454,54 @@ public class PlayerService extends Service {
         }
 
         return Uri.parse(builder.toString());
+    }
+
+
+    void hideNotification() {
+        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancel(NOTIFICATION_ID);
+
+        notificationView = null;
+
+    }
+
+    RemoteViews notificationView;
+
+    void showNotification() {
+        String title;
+        String lastFileStr = getLastFile();
+        if(lastFileStr.equals("")) {
+            title ="No file selected.";
+        } else {
+            title = PlayerActivity.s_findDisplayNameFromUri(this, Uri.parse(lastFileStr));
+        }
+
+        PendingIntent ppauseIntent = createPendingIntent(s_createTogglePauseIntent(this));
+        PendingIntent quitIntent = createPendingIntent(s_createQuitIntent(this));
+
+
+
+
+        notificationView =  new RemoteViews(getPackageName(), R.layout.notification);
+        notificationView.setTextViewText(R.id.textViewNotificationTitle, title);
+        notificationView.setOnClickPendingIntent(R.id.imageButtonNotificationPlayOrPause, ppauseIntent);
+        notificationView.setOnClickPendingIntent(R.id.imageButtonNotificationCollapse, quitIntent);
+
+
+
+        Notification notification = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.notif_icon)
+                .setOngoing(true)
+                .setAutoCancel(false)
+                .setContent(notificationView)
+                .build();
+
+        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(NOTIFICATION_ID, notification);
+    }
+
+    private PendingIntent createPendingIntent(Intent intent) {
+        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
 }

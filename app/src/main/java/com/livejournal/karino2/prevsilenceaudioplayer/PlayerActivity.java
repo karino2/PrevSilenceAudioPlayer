@@ -1,6 +1,7 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -176,8 +177,11 @@ public class PlayerActivity extends ActionBarActivity {
         startActivityForResult(i, REQUEST_GET_AUDIO);
     }
 
-    private String findDisplayNameFromUri(Uri uri) {
-        ContentResolver resolver = getContentResolver();
+    String findDisplayNameFromUri(Uri uri) {
+        return s_findDisplayNameFromUri(this, uri);
+    }
+    public static String s_findDisplayNameFromUri(Context ctx, Uri uri) {
+        ContentResolver resolver = ctx.getContentResolver();
 
         Cursor cursor;
         if(uri.getScheme().equals("file")) {
