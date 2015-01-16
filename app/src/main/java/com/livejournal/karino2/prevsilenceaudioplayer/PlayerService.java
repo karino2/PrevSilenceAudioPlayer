@@ -46,6 +46,8 @@ public class PlayerService extends Service {
         public PauseStateEvent(){}
     }
 
+    boolean duringWait = false;
+    final int MEDIABUTTON_WAIT_DELAY = 500; // ms
 
     AudioPlayer audioPlayer = new AudioPlayer(new AudioPlayer.StateChangedListener() {
         @Override
@@ -62,6 +64,19 @@ public class PlayerService extends Service {
         @Override
         public void requestNext() {
             postPlayNext();
+        }
+
+        @Override
+        public void requestMediaButtonWait() {
+            duringWait = true;
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    duringWait = false;
+                    // always there are an event after MEDIABUTTON_WAIT.
+                    startPlayThread();
+                }
+            }, MEDIABUTTON_WAIT_DELAY);
         }
 
         @Override
@@ -175,14 +190,17 @@ public class PlayerService extends Service {
         context.startService(intent);
     }
 
-    public static void startActionPlayOrPause(Context context) {
+    public static void startActionPlayOrPause(Context context, boolean withDelay) {
         String lastFile = s_getLastFile(context);
         if("".equals(lastFile)) {
+            // TODO: use event and kick GET_CONTENT intent from Activity.
             s_showMessage(context, "No audio set. Please choose audio first.");
             return;
         }
         Intent intent = new Intent(context, PlayerService.class);
         intent.setAction(ACTION_TOGGLE_PAUSE);
+        if(withDelay)
+            intent.putExtra("DELAY", true);
         context.startService(intent);
     }
 
@@ -289,7 +307,7 @@ public class PlayerService extends Service {
                 stopSelf();
                 return START_NOT_STICKY;
             } else if(ACTION_TOGGLE_PAUSE.equals(action)) {
-                handleActionTogglePause();
+                handleActionTogglePause(intent.getBooleanExtra("DELAY", false));
                 return START_STICKY;
             } else if (ACTION_NEXT.equals(action)) {
                 handleActionNext();
@@ -301,25 +319,28 @@ public class PlayerService extends Service {
     }
 
     private void handleActionNext() {
-        if(audioPlayer.isRunning()) {
+        if(isPlayerRunning()) {
             audioPlayer.requestNext();
         } else {
             playNext();
         }
     }
 
-    private void handleActionTogglePause() {
-        if(audioPlayer.isRunning()) {
+    private void handleActionTogglePause(boolean withDelay) {
+        if(isPlayerRunning()) {
             BusProvider.getInstance().post(new PauseStateEvent());
             audioPlayer.requestPause();
         } else {
             BusProvider.getInstance().post(new PlayStateEvent());
+            if(withDelay)
+                audioPlayer.pushMediaButtonWaitCommand();
             startPlayThread();
         }
     }
 
+
     private void handleActionPrev(boolean withDelay) {
-        if(audioPlayer.isRunning()) {
+        if(isPlayerRunning()) {
             audioPlayer.requestPrev(withDelay);
         } else if(!audioPlayer.atHead()) {
             audioPlayer.gotoHead();
@@ -361,7 +382,7 @@ public class PlayerService extends Service {
      */
     private void handleActionPlay(String audioFilePath)  {
         try {
-            if(!audioPlayer.isRunning()) {
+            if(!isPlayerRunning()) {
                 startPlayThreadWithFile(audioFilePath);
             } else {
                 audioPlayer.playAudio(audioFilePath);
@@ -414,9 +435,13 @@ public class PlayerService extends Service {
      * parameters.
      */
     private void handleActionStop() {
-        if(audioPlayer.isRunning()) {
+        if(isPlayerRunning()) {
             audioPlayer.requestStop();
         }
+    }
+
+    private boolean isPlayerRunning() {
+        return duringWait || audioPlayer.isRunning();
     }
 
     public Uri getParentUri(Uri input) {

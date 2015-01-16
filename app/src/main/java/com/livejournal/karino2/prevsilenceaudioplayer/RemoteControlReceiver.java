@@ -35,7 +35,7 @@ public class RemoteControlReceiver extends BroadcastReceiver {
             }
             if (KeyEvent.KEYCODE_MEDIA_PLAY == event.getKeyCode() ||
                     KeyEvent.KEYCODE_MEDIA_PAUSE == event.getKeyCode()) {
-                PlayerService.startActionPlayOrPause(context);
+                PlayerService.startActionPlayOrPause(context, true);
                 abortBroadcast();
                 showDebugMessage(context, "play or pause");
                 return;

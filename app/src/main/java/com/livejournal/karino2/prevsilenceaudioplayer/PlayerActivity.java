@@ -150,7 +150,7 @@ public class PlayerActivity extends ActionBarActivity {
         findViewById(R.id.imageButtonPlayOrPause).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                PlayerService.startActionPlayOrPause(PlayerActivity.this);
+                PlayerService.startActionPlayOrPause(PlayerActivity.this, false);
             }
         });
 

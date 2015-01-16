@@ -35,6 +35,7 @@ public class AudioPlayer {
     public interface StateChangedListener {
         void requestRestart();
         void requestNext();
+        void requestMediaButtonWait();
         void reachEnd();
     }
 
@@ -59,17 +60,14 @@ public class AudioPlayer {
 
 
     public void requestPrev(boolean withDelay) {
-        if(!isRunning)
-        {
-            if(playingState.isPlayReady()) {
-                handleToPreviousOutsideLoop();
-                return;
-            }
-            Log.d("PrevSilence", "Prev: not playing! ignore for a while.");
-            // listener.requestRestart();
-            return;
+        if(withDelay) {
+            pushMediaButtonWaitCommand();
         }
-        pushCommand(withDelay? Command.CommandType.PREVIOUS_WITHDELAY: Command.CommandType.PREVIOUS);
+        pushCommand(Command.CommandType.PREVIOUS);
+    }
+
+    public void pushMediaButtonWaitCommand() {
+        pushCommand(Command.CommandType.MEDIABUTTON_WAIT);
     }
 
 
@@ -159,6 +157,11 @@ public class AudioPlayer {
             case PREVIOUS:
                 handleToPreviousOutsideLoop();
                 return;
+            case MEDIABUTTON_WAIT:
+                // TODO: zap later MEDIABUTTON_WAIT event here.
+                listener.requestMediaButtonWait();
+                return;
+            /*
             case PREVIOUS_WITHDELAY:
                 long rawSeekTo = playingState.getPreviousSilentEnd();
                 pendingSeekTo = Math.max(rawSeekTo-500000, 0); // bluetooth become silent for a while when operate button. wait some time for this reason.
@@ -166,6 +169,7 @@ public class AudioPlayer {
                 // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
                 listener.requestRestart();
                 return;
+                */
             case PAUSE:
                 // do nothing.
                 return;

@@ -7,9 +7,9 @@ public class Command {
     public enum CommandType {
         STOP,
         PREVIOUS,
-        PREVIOUS_WITHDELAY,
         PAUSE,
         NEXT,
+        MEDIABUTTON_WAIT,
         NEW_FILE
     }
     public static Command createCommand(CommandType typ) {
