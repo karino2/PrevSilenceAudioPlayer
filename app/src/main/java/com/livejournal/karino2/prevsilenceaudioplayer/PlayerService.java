@@ -177,7 +177,16 @@ public class PlayerService extends Service {
 
     // just set to previous file, not play.
     private void gotoPrev() throws IOException {
-        String nextPath = findNextOrPrev(Uri.parse(getLastFile()), "DESC");
+        gotoPrevOrNext("DESC");
+    }
+
+    private void gotoNext() throws IOException {
+        gotoPrevOrNext("ASC");
+    }
+
+
+    private void gotoPrevOrNext(String order) throws IOException {
+        String nextPath = findNextOrPrev(Uri.parse(getLastFile()), order);
         audioPlayer.setAudioPath(nextPath);
         saveLastFile(nextPath);
         BusProvider.getInstance().post(new PlayFileChangedEvent(Uri.parse(nextPath)));
@@ -339,7 +348,11 @@ public class PlayerService extends Service {
         if(isPlayerRunning()) {
             audioPlayer.requestNext(withDelay);
         } else {
-            playNext();
+            try {
+                gotoNext();
+            } catch (IOException e) {
+                showMessage("Fail to setup next file: " + e.getMessage());
+            }
         }
     }
 
