@@ -93,7 +93,7 @@ public class SilenceAnalyzer {
     public long getNextSilentEnd() {
         if(silentSectionList.size() == 0)
             return Math.max(0, lastAnalyzedUS-MARGIN_NS);
-        long currentUS = sampleCountToUS(current);
+        long currentUS = Math.min(sampleCountToUS(current)+MARGIN_NS, lastAnalyzedUS);
         for(SilentSection cur : silentSectionList) {
             if (cur.getEnd() > currentUS)
                 return Math.max(0, cur.getEnd() - MARGIN_NS);
