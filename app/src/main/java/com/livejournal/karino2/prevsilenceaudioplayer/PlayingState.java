@@ -254,9 +254,9 @@ public class PlayingState {
             codecOutputBuffers = codec.getOutputBuffers();
         } else if (res == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
             MediaFormat oformat = codec.getOutputFormat();
-            Log.d("PrevSilence", "output format has changed to " + oformat);
+            // Log.d("PrevSilence", "output format has changed to " + oformat);
             if(formatEquals(oformat, prevFormat)) {
-                Log.d("PrevSilence", "same format, do nothing.");
+                // Log.d("PrevSilence", "same format, do nothing.");
                 return;
             }
 

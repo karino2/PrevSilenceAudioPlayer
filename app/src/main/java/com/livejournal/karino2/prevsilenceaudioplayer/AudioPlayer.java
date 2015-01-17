@@ -37,7 +37,6 @@ public class AudioPlayer {
 
     public interface StateChangedListener {
         void requestRestart();
-        void requestNext();
         void requestMediaButtonWait();
         void reachEnd();
     }
@@ -126,7 +125,7 @@ public class AudioPlayer {
 
             if(pendingSeekTo != -1)
             {
-                Log.d("PrevSilence", "Prev: seekTo: " + pendingSeekTo);
+                // Log.d("PrevSilence", "Prev: seekTo: " + pendingSeekTo);
                 playingState.seekTo(pendingSeekTo);
                 pendingSeekTo = -1;
             }
@@ -186,14 +185,13 @@ public class AudioPlayer {
 
     private void handleToPreviousOutsideLoop() {
         pendingSeekTo = playingState.getPreviousSilentEnd();
-        Log.d("PrevSilence", "Prev: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
-        // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
+        // Log.d("PrevSilence", "Prev: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
         listener.requestRestart();
     }
 
     private void handleToNextOutsideLoop() {
         pendingSeekTo = playingState.getNextSilentEnd();
-        Log.d("PrevSilence", "Next: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
+        // Log.d("PrevSilence", "Next: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
         listener.requestRestart();
     }
 

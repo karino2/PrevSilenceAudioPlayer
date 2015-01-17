@@ -51,11 +51,6 @@ public class PlayerActivity extends ActionBarActivity {
     Handler handler = new Handler();
 
     @Subscribe
-    public void onPlayFileChanged(PlayerService.PlayFileChangedEvent event) {
-       //  updateAudioDisplayNameFromUriString(event.getFile().toString());
-    }
-
-    @Subscribe
     public void onPlayState(PlayerService.PlayStateEvent event) {
         ((ImageButton)findViewById(R.id.imageButtonPlayOrPause)).setImageResource(R.drawable.button_pause);
     }
@@ -117,28 +112,6 @@ public class PlayerActivity extends ActionBarActivity {
             updateAudioDisplayNameFromUriString(getLastFile());
         }
 
-
-        /*
-        findViewById(R.id.imageButtonPlayOrPause).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String path = ((EditText)findViewById(R.id.editTextPath)).getText().toString();
-                if("".equals(path)) {
-                    showMessage("Please specify audio file.");
-                    return;
-                }
-                PlayerService.startActionPlay(PlayerActivity.this, path);
-            }
-        });
-
-        findViewById(R.id.buttonStop).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PlayerService.startActionStop(PlayerActivity.this);
-            }
-        });
-        */
-
         findViewById(R.id.imageButtonPrev).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -162,8 +135,6 @@ public class PlayerActivity extends ActionBarActivity {
 
 
     }
-
-
 
     private void postChooseAudio() {
         handler.post(new Runnable() {

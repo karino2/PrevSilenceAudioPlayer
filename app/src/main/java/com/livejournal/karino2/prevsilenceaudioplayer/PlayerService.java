@@ -72,11 +72,6 @@ public class PlayerService extends Service {
             }
 
             @Override
-            public void requestNext() {
-                postPlayNext();
-            }
-
-            @Override
             public void requestMediaButtonWait() {
                 duringWait = true;
                 handler.postDelayed(new Runnable() {
@@ -114,7 +109,7 @@ public class PlayerService extends Service {
     private String findNextOrPrev(Uri origin, String order) {
         if(!origin.getScheme().equals("file"))
         {
-            Log.d("PrevSilent", "only support file:// for nextOrPrev");
+            // Log.d("PrevSilent", "only support file:// for nextOrPrev");
             return null;
         }
         ContentResolver resolver = getContentResolver();
@@ -149,7 +144,7 @@ public class PlayerService extends Service {
             do {
                 if(cursor.getString(1).equals(origin.getPath())) {
                     if(!cursor.moveToNext()) {
-                        Log.d("PrevSilence", "This file is last. No next file.");
+                        // Log.d("PrevSilence", "This file is last. No next file.");
                         return null;
                     }
                     String nextPath = cursor.getString(1);
