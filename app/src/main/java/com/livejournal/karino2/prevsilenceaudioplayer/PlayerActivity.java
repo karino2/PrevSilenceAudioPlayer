@@ -1,7 +1,10 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -15,6 +18,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -52,6 +56,7 @@ public class PlayerActivity extends ActionBarActivity {
     }
 
     static final int REQUEST_GET_AUDIO = 1;
+    static final int DIALOG_ID_ABOUT = 2;
 
     Handler handler = new Handler();
 
@@ -261,6 +266,30 @@ public class PlayerActivity extends ActionBarActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+    private AlertDialog createAbout() {
+        final WebView webView = new WebView(this);
+        webView.loadUrl("file:///android_asset/licenses.html");
+        return new AlertDialog.Builder(this).setTitle("About")
+                .setView(webView)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(final DialogInterface dialog, final int whichButton) {
+                        dialog.dismiss();
+                    }
+                }).create();
+
+    }
+
+
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        switch(id) {
+            case DIALOG_ID_ABOUT:
+                return createAbout();
+        }
+        return super.onCreateDialog(id);
+    }
+
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -280,6 +309,9 @@ public class PlayerActivity extends ActionBarActivity {
             case R.id.action_settings:
                 Intent intent = new Intent(this, SettingsActivity.class);
                 startActivity(intent);
+                return true;
+            case R.id.action_about:
+                showDialog(DIALOG_ID_ABOUT);
                 return true;
         }
         return super.onOptionsItemSelected(item);
