@@ -15,10 +15,15 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
 import com.squareup.otto.Subscribe;
 
 
@@ -78,6 +83,7 @@ public class PlayerActivity extends ActionBarActivity {
     }
 
 
+    AdView adView;
     SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
 
     @Override
@@ -133,7 +139,24 @@ public class PlayerActivity extends ActionBarActivity {
             }
         });
 
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                insertAds();
+            }
+        }, 3000);
+    }
 
+    private void insertAds() {
+        adView = new AdView(this);
+        adView.setAdUnitId( "ca-app-pub-1421062854011986/7191991959" );
+        adView.setAdSize(AdSize.SMART_BANNER);
+        adView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT));
+        LinearLayout layout = (LinearLayout)findViewById(R.id.linearLayoutAds );
+        layout.addView(adView);
+
+        AdRequest adRequest = new AdRequest.Builder().build();
+        adView.loadAd( adRequest );
     }
 
     private void postChooseAudio() {
