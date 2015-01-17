@@ -146,9 +146,13 @@ public class SilenceAnalyzer {
         lastAnalyzedUS = sampleCountToUS(lastAnalyzedCount);
     }
 
-    // final long SILENCE_THRESHOLD = 100;
-    final long SILENCE_THRESHOLD = 1000;
-    final long MINIMUM_DURATION=10000;
+    long silenceThreshold = 1000;
+    long minimumDuration =10000;
+
+    public SilenceAnalyzer(long silenceThresholdVal, long silenceDurationThresholdMs) {
+        silenceThreshold = silenceThresholdVal;
+        minimumDuration = silenceDurationThresholdMs*1000;
+    }
 
     List<SilentSection> silentSectionList = new ArrayList<>();
 
@@ -202,7 +206,7 @@ public class SilenceAnalyzer {
                 if(isSilence(shorts[i])){
                     duration++;
                 } else {
-                    if(duration > MINIMUM_DURATION) {
+                    if(duration > minimumDuration) {
                         silentSectionList.add(new SilentSection(silenceBegin, duration, true));
                         // Log.d("PrevSilence", "endSilence: " + current + ", " + shorts[i]);
                     }
@@ -226,7 +230,7 @@ public class SilenceAnalyzer {
     }
 
     private boolean isSilence(short aShort) {
-        return aShort <= SILENCE_THRESHOLD  && aShort >= -SILENCE_THRESHOLD;
+        return aShort <= silenceThreshold && aShort >= -silenceThreshold;
     }
 
 }

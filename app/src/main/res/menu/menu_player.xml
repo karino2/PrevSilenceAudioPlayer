@@ -1,7 +1,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context=".PlayerActivity">
-    <item android:id="@+id/action_quit" android:title="Quit" />
-    <item android:id="@+id/action_settings" android:title="@string/action_settings"
-        android:orderInCategory="100" app:showAsAction="never" />
+    <item android:id="@+id/action_choose" android:title="Choose" android:icon="@drawable/button_browse_small" app:showAsAction="always" />
+    <item android:id="@+id/action_clear" android:title="Restore Default"  app:showAsAction="never"/>
+    <item android:id="@+id/action_settings" android:title="@string/action_settings" app:showAsAction="never" />
+    <item android:id="@+id/action_quit" android:title="Quit" app:showAsAction="never" />
 </menu>

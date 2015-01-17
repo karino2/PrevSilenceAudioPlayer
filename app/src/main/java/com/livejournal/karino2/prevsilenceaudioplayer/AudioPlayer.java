@@ -80,9 +80,9 @@ public class AudioPlayer {
     PlayingState playingState;
     StateChangedListener listener;
 
-    public AudioPlayer(StateChangedListener listener) {
+    public AudioPlayer(StateChangedListener listener, long silenceThreshold, long silenceDurationThreshold) {
         this.listener = listener;
-        playingState = new PlayingState();
+        playingState = new PlayingState(silenceThreshold, silenceDurationThreshold);
     }
 
     public void playAudio(String audioFilePath) throws IOException {
@@ -164,15 +164,6 @@ public class AudioPlayer {
                 // TODO: zap later MEDIABUTTON_WAIT event here.
                 listener.requestMediaButtonWait();
                 return;
-            /*
-            case PREVIOUS_WITHDELAY:
-                long rawSeekTo = playingState.getPreviousSilentEnd();
-                pendingSeekTo = Math.max(rawSeekTo-500000, 0); // bluetooth become silent for a while when operate button. wait some time for this reason.
-                Log.d("PrevSilence", "Prev: get pendingSeekTo withDlay: " + pendingSeekTo + ", " + playingState.getCurrent());
-                // Log.d("PrevSilence", "seekTo, current: " + pendingSeekTo + ", " + analyzer.getCurrent());
-                listener.requestRestart();
-                return;
-                */
             case PAUSE:
                 // do nothing.
                 return;

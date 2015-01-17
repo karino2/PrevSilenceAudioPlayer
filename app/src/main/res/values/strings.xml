@@ -4,5 +4,11 @@
     <string name="app_name">To Previous!</string>
     <string name="main_title">Back To Previous Sentence!</string>
     <string name="action_settings">Settings</string>
+    <string name="label_media_button_wait_title">Headset button wait</string>
+    <string name="label_silence_threshold_title">Silence intensity threshold</string>
+    <string name="label_silence_duration_threshold_title">Silence interval threshold</string>
+    <string name="label_media_button_wait_summary">Headset button wait in ms. For some bluetooth headset, operation sound disturbs audio for some duration and better waiting some moment.</string>
+    <string name="label_silence_threshold_summary">Regard sound quieter than this value as silence.</string>
+    <string name="label_silence_duration_threshold_summary">Regard interval of silence longer than this threshold as silence section. ms.</string>
 
 </resources>

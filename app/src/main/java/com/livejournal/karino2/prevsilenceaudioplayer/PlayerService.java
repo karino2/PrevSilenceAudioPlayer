@@ -12,10 +12,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.*;
 import android.os.Process;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.widget.ImageButton;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
@@ -51,45 +51,55 @@ public class PlayerService extends Service {
     public static class PauseStateEvent {
         public PauseStateEvent(){}
     }
+    public static class NoAudioEvent {
+        public NoAudioEvent(){}
+    }
 
     boolean duringWait = false;
-    final int MEDIABUTTON_WAIT_DELAY = 700; // ms
+    int mediaButtonWaitDelay; // ms
 
-    AudioPlayer audioPlayer = new AudioPlayer(new AudioPlayer.StateChangedListener() {
-        @Override
-        public void requestRestart() {
-            // delayed for avoid isRunning overwrite for finally clause.
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    startPlayThread();
-                }
-            });
-        }
+    public void newAudioPlayer() {
+        audioPlayer = new AudioPlayer(new AudioPlayer.StateChangedListener() {
+            @Override
+            public void requestRestart() {
+                // delayed for avoid isRunning overwrite for finally clause.
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        startPlayThread();
+                    }
+                });
+            }
 
-        @Override
-        public void requestNext() {
-            postPlayNext();
-        }
+            @Override
+            public void requestNext() {
+                postPlayNext();
+            }
 
-        @Override
-        public void requestMediaButtonWait() {
-            duringWait = true;
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    duringWait = false;
-                    // always there are an event after MEDIABUTTON_WAIT.
-                    startPlayThread();
-                }
-            }, MEDIABUTTON_WAIT_DELAY);
-        }
+            @Override
+            public void requestMediaButtonWait() {
+                duringWait = true;
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        duringWait = false;
+                        // always there are an event after MEDIABUTTON_WAIT.
+                        startPlayThread();
+                    }
+                }, mediaButtonWaitDelay);
+            }
 
-        @Override
-        public void reachEnd() {
-            postPlayNext();
-        }
-    });
+            @Override
+            public void reachEnd() {
+                postPlayNext();
+            }
+        },
+                Math.max(1, Long.valueOf(getPref().getString("SILENCE_INTENSITY_THRESHOLD", "1000"))),
+                Math.max(1, Long.valueOf(getPref().getString("SILENCE_DURATION_THRESHOLD", "100")))
+        );
+    }
+
+    AudioPlayer audioPlayer;
 
     private void postPlayNext() {
         handler.post(new Runnable() {
@@ -208,8 +218,7 @@ public class PlayerService extends Service {
     public static void startActionPlayOrPause(Context context, boolean withDelay) {
         String lastFile = s_getLastFile(context);
         if("".equals(lastFile)) {
-            // TODO: use event and kick GET_CONTENT intent from Activity.
-            s_showMessage(context, "No audio set. Please choose audio first.");
+            BusProvider.getInstance().post(new NoAudioEvent());
             return;
         }
         Intent intent = s_createTogglePauseIntent(context);
@@ -265,12 +274,9 @@ public class PlayerService extends Service {
         return intent;
     }
 
-    private SharedPreferences getPref() {
-        return getSharedPreferences("pref", MODE_PRIVATE);
-    }
 
     private static String s_getLastFile(Context ctx) {
-        return ctx.getSharedPreferences("pref", MODE_PRIVATE).getString("LAST_PLAY", "");
+        return PreferenceManager.getDefaultSharedPreferences(ctx).getString("LAST_PLAY", "");
     }
 
     private String getLastFile() {
@@ -418,6 +424,7 @@ public class PlayerService extends Service {
                 audioPlayer.playAudio(audioFilePath);
             }
             saveLastFile(audioFilePath); // write if succeed.
+            BusProvider.getInstance().post(new PlayStateEvent());
         } catch (IOException e) {
             showDebugMessage("play fail: " + e.getMessage());
         }
@@ -455,10 +462,41 @@ public class PlayerService extends Service {
         });
     }
 
+    SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
     @Override
     public void onCreate() {
         super.onCreate();
         BusProvider.getInstance().register(this);
+        preferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                if("MEDIA_BUTTON_WAIT".equals(key)) {
+                    mediaButtonWaitDelay = Math.max(0, Integer.valueOf(getPref().getString("MEDIA_BUTTON_WAIT", "650")));
+                    return;
+                }
+                if("LAST_PLAY".equals(key))
+                    return;
+                updatePreference();
+            }
+        };
+        getPref().registerOnSharedPreferenceChangeListener(preferenceChangeListener);
+        newAudioPlayer();
+        mediaButtonWaitDelay = Math.max(0, Integer.valueOf(getPref().getString("MEDIA_BUTTON_WAIT", "650")));
+    }
+
+    private void updatePreference() {
+        // caution! should not call any callback after this method!
+        if(audioPlayer.isRunning()) {
+            audioPlayer.requestStop();
+            // this is not Pause, but currently no difference. I just re-use the same event for a while.
+            BusProvider.getInstance().post(new PauseStateEvent());
+        }
+
+        newAudioPlayer();
+    }
+
+    public SharedPreferences getPref() {
+        return PreferenceManager.getDefaultSharedPreferences(this);
     }
 
     @Override

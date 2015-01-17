@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -24,16 +25,19 @@ import com.squareup.otto.Subscribe;
 public class PlayerActivity extends ActionBarActivity {
 
     private SharedPreferences getPref() {
-        return getSharedPreferences("pref", MODE_PRIVATE);
+        return PreferenceManager.getDefaultSharedPreferences(this);
     }
 
     private String getLastFile() {
         return getPref().getString("LAST_PLAY", "");
     }
 
-    private void clearLastFile() {
+    private void clearAllPreferences() {
         getPref().edit()
                 .putString("LAST_PLAY", "")
+                .putString("MEDIA_BUTTON_WAIT", "650")
+                .putString("SILENCE_INTENSITY_THRESHOLD", "1000")
+                .putString("SILENCE_DURATION_THRESHOLD", "10")
                 .commit();
     }
 
@@ -48,7 +52,7 @@ public class PlayerActivity extends ActionBarActivity {
 
     @Subscribe
     public void onPlayFileChanged(PlayerService.PlayFileChangedEvent event) {
-        updateAudioDisplayNameFromUriString(event.getFile().toString());
+       //  updateAudioDisplayNameFromUriString(event.getFile().toString());
     }
 
     @Subscribe
@@ -59,6 +63,11 @@ public class PlayerActivity extends ActionBarActivity {
     @Subscribe
     public void onPauseState(PlayerService.PauseStateEvent event) {
         ((ImageButton)findViewById(R.id.imageButtonPlayOrPause)).setImageResource(R.drawable.button_play);
+    }
+
+    @Subscribe
+    public void onNoAudio(PlayerService.NoAudioEvent event) {
+        postChooseAudio();
     }
 
     @Override
@@ -73,10 +82,25 @@ public class PlayerActivity extends ActionBarActivity {
         BusProvider.getInstance().unregister(this);
     }
 
+
+    SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         RemoteControlReceiver.ensureReceiverRegistered(this);
+
+        preferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                if("LAST_PLAY".equals(key)) {
+                    updateAudioDisplayNameFromUriString(getLastFile());
+                }
+
+            }
+        };
+        getPref().registerOnSharedPreferenceChangeListener(preferenceChangeListener);
+
 
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         setContentView(R.layout.activity_player);
@@ -88,13 +112,9 @@ public class PlayerActivity extends ActionBarActivity {
         {
             Uri uri = intent.getData();
             String path = uri.toString(); /* uri.getPath() */
-            updateAudioDisplayNameFromUriString(path);
             PlayerService.startActionPlay(this, uri.toString());
         } else {
             updateAudioDisplayNameFromUriString(getLastFile());
-            if("".equals(getLastFile())) {
-                postChooseAudio();
-            }
         }
 
 
@@ -133,21 +153,6 @@ public class PlayerActivity extends ActionBarActivity {
             }
         });
 
-        findViewById(R.id.imageButtonChoose).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                chooseAudioFile();
-            }
-        });
-
-        findViewById(R.id.buttonClear).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showMessage("Clear saved path.");
-                clearLastFile();
-            }
-        });
-
         findViewById(R.id.imageButtonPlayOrPause).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -170,7 +175,7 @@ public class PlayerActivity extends ActionBarActivity {
     }
 
     private void chooseAudioFile() {
-        showMessage("Choose audio files");
+        showMessage("Choose audio file");
         Intent i = new Intent();
         i.setAction(Intent.ACTION_GET_CONTENT);
         i.setType("audio/*");
@@ -239,6 +244,7 @@ public class PlayerActivity extends ActionBarActivity {
 
     @Override
     protected void onDestroy() {
+        getPref().unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
         super.onDestroy();
     }
 
@@ -255,11 +261,9 @@ public class PlayerActivity extends ActionBarActivity {
             case REQUEST_GET_AUDIO:
                 if(resultCode == RESULT_OK) {
                     String path = data.getData().toString();
-                    updateAudioDisplayNameFromUriString(path);
                     PlayerService.startActionPlay(this, path);
                 }
                 return;
-
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -272,15 +276,23 @@ public class PlayerActivity extends ActionBarActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if(id == R.id.action_quit) {
-            PlayerService.startActionQuit(this);
-            finish();
-            return true;
+        switch (id) {
+            case R.id.action_quit:
+                PlayerService.startActionQuit(this);
+                finish();
+                return true;
+            case R.id.action_choose:
+                postChooseAudio();
+                return true;
+            case R.id.action_clear:
+                showMessage("Clear saved path.");
+                clearAllPreferences();
+                return true;
+            case R.id.action_settings:
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
+                return true;
         }
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
         return super.onOptionsItemSelected(item);
     }
 }

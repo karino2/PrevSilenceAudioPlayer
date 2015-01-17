@@ -25,9 +25,9 @@ public class PlayingState {
     private String lastAudioPath;
     Context context;
 
-    public PlayingState() {
+    public PlayingState(long silenceThreshold, long silenceDurationThreshold) {
         extractor = new MediaExtractor();
-        analyzer = new SilenceAnalyzer();
+        analyzer = new SilenceAnalyzer(silenceThreshold, silenceDurationThreshold);
     }
 
 
