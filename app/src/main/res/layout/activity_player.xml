@@ -18,7 +18,8 @@
         android:text="No Audio"
         android:textColor="#FFFFFF"
         android:id="@+id/textViewName"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:textSize="20dp" />
     <LinearLayout android:orientation="horizontal"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
