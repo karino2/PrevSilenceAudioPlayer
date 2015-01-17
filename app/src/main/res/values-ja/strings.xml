@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">一文戻って！</string>
+    <string name="main_title">ちょっと一文戻って!</string>
+    <string name="action_settings">設定</string>
+    <string name="label_media_button_wait_title">ヘッドセットボタン待ち</string>
+    <string name="label_silence_threshold_title">無音とする音量閾値</string>
+    <string name="label_silence_duration_threshold_title">無音区間閾値</string>
+    <string name="label_media_button_wait_summary">Bluetoothのヘッドセットのボタンで操作した時にディレイを入れる時間をミリ秒で指定します。
+        Bluetoothのヘッドセットによっては、操作をしてから一瞬音が出ない時間がある物があるので、その場合はこの値を少し長めにします。</string>
+    <string name="label_silence_threshold_summary">この値より小さな音量の音を無音とみなします。</string>
+    <string name="label_silence_duration_threshold_summary">この値より長い区間無音が続いたら無音区間とみなす、時間の長さです。単位はミリ秒です。</string>
+    <string name="label_restore_default">設定を初期状態に戻す</string>
+    <string name="label_quit">終了</string>
+</resources>

@@ -10,5 +10,7 @@
     <string name="label_media_button_wait_summary">Headset button wait in ms. For some bluetooth headset, operation sound disturbs audio for some duration and better waiting some moment.</string>
     <string name="label_silence_threshold_summary">Regard sound quieter than this value as silence.</string>
     <string name="label_silence_duration_threshold_summary">Regard interval of silence longer than this threshold as silence section. ms.</string>
+    <string name="label_restore_default">Restore Default</string>
+    <string name="label_quit">Quit</string>
 
 </resources>

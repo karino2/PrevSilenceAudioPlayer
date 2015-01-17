@@ -2,8 +2,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context=".PlayerActivity">
     <item android:id="@+id/action_choose" android:title="Choose" android:icon="@drawable/button_browse_small" app:showAsAction="always" />
-    <item android:id="@+id/action_clear" android:title="Restore Default"  app:showAsAction="never"/>
+    <item android:id="@+id/action_clear" android:title="@string/label_restore_default"  app:showAsAction="never"/>
     <item android:id="@+id/action_settings" android:title="@string/action_settings" app:showAsAction="never" />
     <item android:title="About" android:id="@+id/action_about" android:icon="@android:drawable/ic_menu_info_details"></item>
-    <item android:id="@+id/action_quit" android:title="Quit" app:showAsAction="never" />
+    <item android:id="@+id/action_quit" android:title="@string/label_quit" app:showAsAction="never" />
 </menu>
