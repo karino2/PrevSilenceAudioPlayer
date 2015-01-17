@@ -123,13 +123,6 @@ public class PlayerService extends Service {
                         MediaStore.Audio.Media.TITLE,
                         MediaStore.Audio.Media.DATA
                 },
-                /*
-                "? LIKE ?",
-                new String[] {
-                        MediaStore.Audio.Media.DATA,
-                        parent.toString()+"%"
-                },
-                */
                 MediaStore.Audio.Media.DATA + " LIKE ?",
                 new String[] {
                         parent.getPath()+"%"
@@ -149,8 +142,7 @@ public class PlayerService extends Service {
                     }
                     String nextPath = cursor.getString(1);
                     // showMessage("Next file is: " + nextPath);
-                    String nextUriStr = "file://" + nextPath;
-                    return nextUriStr;
+                    return "file://" + nextPath;
                 }
             }while(cursor.moveToNext());
             Log.d("PrevSilence", "Original audio file not found. where is there?");
