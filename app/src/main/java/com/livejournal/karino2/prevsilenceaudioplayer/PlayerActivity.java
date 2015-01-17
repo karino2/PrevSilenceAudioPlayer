@@ -149,7 +149,7 @@ public class PlayerActivity extends ActionBarActivity {
             public void run() {
                 insertAds();
             }
-        }, 3000);
+        }, 1000);
     }
 
     private void insertAds() {
