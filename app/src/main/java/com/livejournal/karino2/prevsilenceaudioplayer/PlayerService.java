@@ -333,8 +333,7 @@ public class PlayerService extends Service {
                 return START_STICKY;
             }
         }
-        showMessage("unknown start command.");
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
     private void handleActionNext(boolean withDelay) {
