@@ -62,7 +62,7 @@ public class PlayerService extends Service {
         audioPlayer = new AudioPlayer(new AudioPlayer.StateChangedListener() {
             @Override
             public void requestRestart() {
-                // delayed for avoid isRunning overwrite for finally clause.
+                // delayed for avoid isInsidePlayLoop overwrite for finally clause.
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -351,7 +351,7 @@ public class PlayerService extends Service {
     }
 
     private void handleActionNext(boolean withDelay) {
-        if(isPlayerRunning()) {
+        if(isPlaying()) {
             audioPlayer.requestNext(withDelay);
         } else {
             try {
@@ -363,7 +363,7 @@ public class PlayerService extends Service {
     }
 
     private void handleActionTogglePause(boolean withDelay) {
-        if(isPlayerRunning()) {
+        if(isPlaying()) {
             BusProvider.getInstance().post(new PauseStateEvent());
             audioPlayer.requestPause();
         } else {
@@ -376,7 +376,7 @@ public class PlayerService extends Service {
 
 
     private void handleActionPrev(boolean withDelay) {
-        if(isPlayerRunning()) {
+        if(isPlaying()) {
             audioPlayer.requestPrev(withDelay);
         } else if(!audioPlayer.atHead()) {
             audioPlayer.gotoHead();
@@ -418,10 +418,10 @@ public class PlayerService extends Service {
      */
     private void handleActionPlay(String audioFilePath)  {
         try {
-            if(!isPlayerRunning()) {
+            if(!audioPlayer.isInsidePlayLoop()) {
                 startPlayThreadWithFile(audioFilePath);
             } else {
-                audioPlayer.playAudio(audioFilePath);
+                audioPlayer.requestPlayAudio(audioFilePath);
             }
             saveLastFile(audioFilePath); // write if succeed.
             BusProvider.getInstance().post(new PlayStateEvent());
@@ -486,7 +486,7 @@ public class PlayerService extends Service {
 
     private void updatePreference() {
         // caution! should not call any callback after this method!
-        if(audioPlayer.isRunning()) {
+        if(audioPlayer.isInsidePlayLoop()) {
             audioPlayer.requestStop();
             // this is not Pause, but currently no difference. I just re-use the same event for a while.
             BusProvider.getInstance().post(new PauseStateEvent());
@@ -506,8 +506,8 @@ public class PlayerService extends Service {
         super.onDestroy();
     }
 
-    private boolean isPlayerRunning() {
-        return duringWait || audioPlayer.isRunning();
+    private boolean isPlaying() {
+        return duringWait || audioPlayer.isPlaying();
     }
 
     public Uri getParentUri(Uri input) {

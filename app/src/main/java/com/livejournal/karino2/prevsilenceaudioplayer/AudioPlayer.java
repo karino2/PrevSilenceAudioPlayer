@@ -74,7 +74,7 @@ public class AudioPlayer {
     }
 
 
-    boolean isRunning = false;
+    boolean isInsidePlayLoop = false;
 
 
     PlayingState playingState;
@@ -85,8 +85,8 @@ public class AudioPlayer {
         playingState = new PlayingState(silenceThreshold, silenceDurationThreshold);
     }
 
-    public void playAudio(String audioFilePath) throws IOException {
-        if(isRunning) {
+    public void requestPlayAudio(String audioFilePath) throws IOException {
+        if(isInsidePlayLoop) {
             pushCommand(Command.createNewFileCommand(audioFilePath));
         }else {
             setAudioPath(audioFilePath);
@@ -97,15 +97,20 @@ public class AudioPlayer {
     public void setAudioPath(String audioFilePath) throws IOException {
         playingState.setAudioPath(audioFilePath);
         playingState.prepare();
+        isPlaying = false;
     }
 
-    public boolean isRunning() {
-        return isRunning;
+    public boolean isPlaying() {
+        return isPlaying;
+    }
+
+    public boolean isInsidePlayLoop() {
+        return isInsidePlayLoop;
     }
     public boolean atHead() { return playingState.atHead(); }
 
     public void requestStop() {
-        if(isRunning) {
+        if(isInsidePlayLoop) {
             pushCommand(Command.CommandType.STOP);
         }
     }
@@ -113,7 +118,8 @@ public class AudioPlayer {
     long pendingSeekTo = -1;
 
     public void play() throws IOException {
-        isRunning = true;
+        isInsidePlayLoop = true;
+        isPlaying = true;
 
         try {
             playingState.ensurePrepare();
@@ -140,17 +146,20 @@ public class AudioPlayer {
                 listener.reachEnd();
             }
         }finally {
-            isRunning = false;
+            isInsidePlayLoop = false;
         }
 
     }
 
+
+    boolean isPlaying = false;
 
     private void handlePendingCommand() throws IOException {
         Command command = popCommand();
         switch(command.getCommandType()) {
             case STOP:
                 playingState.finishPlaying();
+                isPlaying = false;
                 return;
             case NEW_FILE:
                 playingState.finishPlaying();
@@ -165,7 +174,7 @@ public class AudioPlayer {
                 listener.requestMediaButtonWait();
                 return;
             case PAUSE:
-                // do nothing.
+                isPlaying = false;
                 return;
             case NEXT:
                 handleToNextOutsideLoop();
