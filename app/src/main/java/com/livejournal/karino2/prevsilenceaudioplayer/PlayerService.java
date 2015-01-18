@@ -416,6 +416,7 @@ public class PlayerService extends Service {
             }
             saveLastFile(audioFilePath); // write if succeed.
             BusProvider.getInstance().post(new PlayStateEvent());
+            BusProvider.getInstance().post(new PlayFileChangedEvent(Uri.parse(audioFilePath)));
         } catch (IOException e) {
             showDebugMessage("play fail: " + e.getMessage());
         }
