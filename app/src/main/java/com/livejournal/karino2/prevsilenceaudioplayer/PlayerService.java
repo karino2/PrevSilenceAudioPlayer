@@ -165,6 +165,8 @@ public class PlayerService extends Service {
             }
             saveLastFile(nextPath); // setDataSource is succeeded. So save here is not so bad.
             BusProvider.getInstance().post(new PlayFileChangedEvent(Uri.parse(nextPath)));
+        } else {
+            BusProvider.getInstance().post(new PauseStateEvent());
         }
     }
 

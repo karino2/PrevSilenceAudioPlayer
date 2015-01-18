@@ -142,6 +142,7 @@ public class AudioPlayer {
                 handlePendingCommand();
             } else {
                 playingState.finishPlaying();
+                isPlaying = false;
                 listener.reachEnd();
             }
         }finally {

@@ -50,6 +50,7 @@ public class PlayingState {
 
 
     private void setupCodecAndOutputAudioTrack() throws IOException {
+        extractor.seekTo(0, MediaExtractor.SEEK_TO_PREVIOUS_SYNC);
         MediaFormat format = extractor.getTrackFormat(0);
 
         String mime = format.getString(MediaFormat.KEY_MIME);
@@ -107,7 +108,6 @@ public class PlayingState {
         if(!audioPathSet) {
             setAudioPath(lastAudioPath);
         }
-
 
         setupCodecAndOutputAudioTrack();
 
