@@ -40,6 +40,11 @@ public class PlayerActivity extends ActionBarActivity {
     private String getLastFile() {
         return getPref().getString("LAST_PLAY", "");
     }
+    private void clearLastFile() {
+        getPref().edit()
+        .putString("LAST_PLAY", "")
+        .commit();
+    }
 
     private void clearAllPreferences() {
         getPref().edit()
@@ -50,9 +55,13 @@ public class PlayerActivity extends ActionBarActivity {
                 .commit();
     }
 
+    static void s_showMessage(Context ctx, String msg) {
+        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show();
+    }
+
     void showMessage(String msg)
     {
-        Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+        s_showMessage(getApplicationContext(), msg);
     }
 
     static final int REQUEST_GET_AUDIO = 1;
@@ -120,7 +129,7 @@ public class PlayerActivity extends ActionBarActivity {
             String path = uri.toString(); /* uri.getPath() */
             PlayerService.startActionPlay(this, uri.toString());
         } else {
-            updateAudioDisplayNameFromUriString(getLastFile());
+            updateAudioDisplayNameFromUriStringAndRevertIfFail(getLastFile());
         }
 
         findViewById(R.id.imageButtonPrev).setOnClickListener(new View.OnClickListener() {
@@ -185,45 +194,73 @@ public class PlayerActivity extends ActionBarActivity {
         return s_findDisplayNameFromUri(this, uri);
     }
     public static String s_findDisplayNameFromUri(Context ctx, Uri uri) {
+        return s_findDisplayNameFromUriGeneral(ctx, uri, false);
+    }
+    public static String s_findDisplayNameFromUriGeneral(Context ctx, Uri uri, boolean nullIfFail) {
         ContentResolver resolver = ctx.getContentResolver();
 
-        Cursor cursor;
-        if(uri.getScheme().equals("file")) {
-
-            cursor = resolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    new String[]{
-                            MediaStore.Audio.Media.TITLE,
-                            MediaStore.Audio.Media.DISPLAY_NAME,
-                            MediaStore.Audio.Media.DATA
-                    },
-                    MediaStore.Audio.Media.DATA + " = ?",
-                    new String[]{
-                            uri.getPath()
-                    },
-                    null
-            );
-        }else {
-            // may be other possibilities. but I don't know.
-            cursor = resolver.query(uri,
-                    new String[]{
-                            MediaStore.Audio.Media.TITLE,
-                            MediaStore.Audio.Media.DISPLAY_NAME,
-                            MediaStore.Audio.Media.DATA
-                    },
-                    null,
-                    null,
-                    null
-            );
-        }
         try {
-            if (!cursor.moveToFirst()) {
-                return "No Name";
+            Cursor cursor;
+            if (uri.getScheme().equals("file")) {
+
+                cursor = resolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                        new String[]{
+                                MediaStore.Audio.Media.TITLE,
+                                MediaStore.Audio.Media.DISPLAY_NAME,
+                                MediaStore.Audio.Media.DATA
+                        },
+                        MediaStore.Audio.Media.DATA + " = ?",
+                        new String[]{
+                                uri.getPath()
+                        },
+                        null
+                );
+            } else {
+                // may be other possibilities. but I don't know.
+                cursor = resolver.query(uri,
+                        new String[]{
+                                MediaStore.Audio.Media.TITLE,
+                                MediaStore.Audio.Media.DISPLAY_NAME,
+                                MediaStore.Audio.Media.DATA
+                        },
+                        null,
+                        null,
+                        null
+                );
             }
-            // In my audio file, most of title is mojibake. So I don't want to use it.
-            // showMessage("title: " + cursor.getString(0));
-            return cursor.getString(1);
-        } finally {
-            cursor.close();
+            try {
+                if (cursor==null || !cursor.moveToFirst()) {
+                    if(nullIfFail)
+                        return null;
+                    return "No Name";
+                }
+                // In my audio file, most of title is mojibake. So I don't want to use it.
+                // showMessage("title: " + cursor.getString(0));
+                return cursor.getString(1);
+            } finally {
+                if(cursor != null)
+                    cursor.close();
+            }
+        }catch(java.lang.SecurityException se) {
+            s_showMessage(ctx, "Fail to retrieve display name: " + se.getMessage());
+            if(nullIfFail)
+                return null;
+            return "Not Available";
+        }
+    }
+
+    private void updateAudioDisplayNameFromUriStringAndRevertIfFail(String uriStr) {
+        if(uriStr.equals("")) {
+            updateDisplayName("No audio selected.");
+        } else {
+            String displayName = s_findDisplayNameFromUriGeneral(this, Uri.parse(uriStr), true);
+            if(displayName == null) {
+                // this will call updateDisplayName
+                clearLastFile();
+                // updateDisplayName("No audio selected.");
+                return;
+            }
+            updateDisplayName(displayName);
         }
     }
 
