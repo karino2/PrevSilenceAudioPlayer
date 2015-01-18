@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.AudioManager;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -197,52 +198,16 @@ public class PlayerActivity extends ActionBarActivity {
         return s_findDisplayNameFromUriGeneral(ctx, uri, false);
     }
     public static String s_findDisplayNameFromUriGeneral(Context ctx, Uri uri, boolean nullIfFail) {
-        ContentResolver resolver = ctx.getContentResolver();
-
+        MediaMetadataRetriever metadataRetriever = new MediaMetadataRetriever();
         try {
-            Cursor cursor;
-            if (uri.getScheme().equals("file")) {
-
-                cursor = resolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                        new String[]{
-                                MediaStore.Audio.Media.TITLE,
-                                MediaStore.Audio.Media.DISPLAY_NAME,
-                                MediaStore.Audio.Media.DATA
-                        },
-                        MediaStore.Audio.Media.DATA + " = ?",
-                        new String[]{
-                                uri.getPath()
-                        },
-                        null
-                );
-            } else {
-                // may be other possibilities. but I don't know.
-                cursor = resolver.query(uri,
-                        new String[]{
-                                MediaStore.Audio.Media.TITLE,
-                                MediaStore.Audio.Media.DISPLAY_NAME,
-                                MediaStore.Audio.Media.DATA
-                        },
-                        null,
-                        null,
-                        null
-                );
-            }
-            try {
-                if (cursor==null || !cursor.moveToFirst()) {
-                    if(nullIfFail)
-                        return null;
-                    return "No Name";
-                }
-                // In my audio file, most of title is mojibake. So I don't want to use it.
-                // showMessage("title: " + cursor.getString(0));
-                return cursor.getString(1);
-            } finally {
-                if(cursor != null)
-                    cursor.close();
-            }
-        }catch(java.lang.SecurityException se) {
+            metadataRetriever.setDataSource(ctx, uri);
+            return metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+        } catch(java.lang.SecurityException se) {
             s_showMessage(ctx, "Fail to retrieve display name: " + se.getMessage());
+            if (nullIfFail)
+                return null;
+            return "Not Available";
+        } catch(IllegalArgumentException ie) {
             if(nullIfFail)
                 return null;
             return "Not Available";
