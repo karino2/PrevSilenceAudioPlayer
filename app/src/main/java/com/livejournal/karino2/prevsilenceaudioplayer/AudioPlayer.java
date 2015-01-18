@@ -170,7 +170,7 @@ public class AudioPlayer {
                 handleToPreviousOutsideLoop();
                 return;
             case MEDIABUTTON_WAIT:
-                // TODO: zap later MEDIABUTTON_WAIT event here.
+                zapWaitEvent();
                 listener.requestMediaButtonWait();
                 return;
             case PAUSE:
@@ -182,6 +182,16 @@ public class AudioPlayer {
                 return;
         }
 
+    }
+
+    private void zapWaitEvent() {
+        ArrayList<Command> deleteCandidate = new ArrayList<>();
+        for(Command command : commandQueue) {
+            if(command.getCommandType() == Command.CommandType.MEDIABUTTON_WAIT) {
+                deleteCandidate.add(command);
+            }
+        }
+        commandQueue.removeAll(deleteCandidate);
     }
 
     private void handleToPreviousOutsideLoop() {
