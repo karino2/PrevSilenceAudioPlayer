@@ -580,8 +580,7 @@ public class PlayerService extends Service {
                 .setContent(notificationView)
                 .build();
 
-        NotificationManager notificationManager = getNotificationManager();
-        notificationManager.notify(NOTIFICATION_ID, notification);
+        startForeground(NOTIFICATION_ID, notification);
     }
 
     private String findDisplayNameFromUriStr(String lastFileStr) {
