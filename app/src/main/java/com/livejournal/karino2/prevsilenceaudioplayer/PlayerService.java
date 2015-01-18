@@ -186,6 +186,9 @@ public class PlayerService extends Service {
 
     private void gotoPrevOrNext(String order) throws IOException {
         String nextPath = findNextOrPrev(Uri.parse(getLastFile()), order);
+        if(nextPath == null) {
+            return; // no next file, do nothing.
+        }
         audioPlayer.setAudioPath(nextPath);
         saveLastFile(nextPath);
         BusProvider.getInstance().post(new PlayFileChangedEvent(Uri.parse(nextPath)));
