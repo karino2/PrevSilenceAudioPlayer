@@ -2,25 +2,21 @@ package com.livejournal.karino2.prevsilenceaudioplayer;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebView;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -71,13 +67,12 @@ public class PlayerActivity extends ActionBarActivity {
     Handler handler = new Handler();
 
     @Subscribe
-    public void onPlayState(PlayerService.PlayStateEvent event) {
-        ((ImageButton)findViewById(R.id.imageButtonPlayOrPause)).setImageResource(R.drawable.button_pause);
-    }
-
-    @Subscribe
-    public void onPauseState(PlayerService.PauseStateEvent event) {
-        ((ImageButton)findViewById(R.id.imageButtonPlayOrPause)).setImageResource(R.drawable.button_play);
+    public void onPlayPauseState(PlayerService.PlayPauseStateEvent event) {
+        if(event.isPause) {
+            ((ImageButton)findViewById(R.id.imageButtonPlayOrPause)).setImageResource(R.drawable.button_play);
+        } else {
+            ((ImageButton)findViewById(R.id.imageButtonPlayOrPause)).setImageResource(R.drawable.button_pause);
+        }
     }
 
     @Subscribe

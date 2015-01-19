@@ -45,8 +45,15 @@ public class PlayerService extends Service {
 
     final static int NOTIFICATION_ID = R.layout.notification;
 
-    public static class PlayStateEvent {
-        public PlayStateEvent(){}
+    public static class PlayPauseStateEvent {
+        public static PlayPauseStateEvent createPlayStateEvent() { return new PlayPauseStateEvent(false) ; }
+        public static PlayPauseStateEvent createPauseStateEvent() { return new PlayPauseStateEvent(true) ; }
+        public PlayPauseStateEvent(boolean pauseState){ isPause = pauseState; }
+        boolean isPause;
+
+        public boolean isPause() {
+            return isPause;
+        }
     }
     public static class PauseStateEvent {
         public PauseStateEvent(){}
@@ -166,7 +173,7 @@ public class PlayerService extends Service {
             saveLastFile(nextPath); // setDataSource is succeeded. So save here is not so bad.
             BusProvider.getInstance().post(new PlayFileChangedEvent(Uri.parse(nextPath)));
         } else {
-            BusProvider.getInstance().post(new PauseStateEvent());
+            BusProvider.getInstance().post(PlayPauseStateEvent.createPauseStateEvent());
         }
     }
 
@@ -355,10 +362,10 @@ public class PlayerService extends Service {
 
     private void handleActionTogglePause(boolean withDelay) {
         if(isPlaying()) {
-            BusProvider.getInstance().post(new PauseStateEvent());
+            BusProvider.getInstance().post(PlayPauseStateEvent.createPauseStateEvent());
             audioPlayer.requestPause();
         } else {
-            BusProvider.getInstance().post(new PlayStateEvent());
+            BusProvider.getInstance().post(PlayPauseStateEvent.createPlayStateEvent());
             if(withDelay)
                 audioPlayer.pushMediaButtonWaitCommand();
             startPlayThread();
@@ -415,7 +422,7 @@ public class PlayerService extends Service {
                 audioPlayer.requestPlayAudio(audioFilePath);
             }
             saveLastFile(audioFilePath); // write if succeed.
-            BusProvider.getInstance().post(new PlayStateEvent());
+            BusProvider.getInstance().post(PlayPauseStateEvent.createPlayStateEvent());
             BusProvider.getInstance().post(new PlayFileChangedEvent(Uri.parse(audioFilePath)));
         } catch (IOException e) {
             showDebugMessage("play fail: " + e.getMessage());
@@ -481,7 +488,7 @@ public class PlayerService extends Service {
         if(audioPlayer.isInsidePlayLoop()) {
             audioPlayer.requestStop();
             // this is not Pause, but currently no difference. I just re-use the same event for a while.
-            BusProvider.getInstance().post(new PauseStateEvent());
+            BusProvider.getInstance().post(PlayPauseStateEvent.createPauseStateEvent());
         }
 
         newAudioPlayer();
@@ -540,17 +547,13 @@ public class PlayerService extends Service {
     }
 
     @Subscribe
-    public void onPlayState(PlayerService.PlayStateEvent event) {
+    public void onPlayOrPauseState(PlayPauseStateEvent event) {
         if(notificationView != null) {
-            notificationView.setImageViewResource(R.id.imageButtonNotificationPlayOrPause, R.drawable.button_pause_small);
-            getNotificationManager().notify(NOTIFICATION_ID, notification);
-        }
-    }
-
-    @Subscribe
-    public void onPauseState(PlayerService.PauseStateEvent event) {
-        if(notificationView != null) {
-            notificationView.setImageViewResource(R.id.imageButtonNotificationPlayOrPause, R.drawable.button_play_small);
+            if(event.isPause()) {
+                notificationView.setImageViewResource(R.id.imageButtonNotificationPlayOrPause, R.drawable.button_play_small);
+            } else {
+                notificationView.setImageViewResource(R.id.imageButtonNotificationPlayOrPause, R.drawable.button_pause_small);
+            }
             getNotificationManager().notify(NOTIFICATION_ID, notification);
         }
     }
