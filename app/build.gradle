@@ -8,8 +8,8 @@ android {
         applicationId "com.livejournal.karino2.prevsilenceaudioplayer"
         minSdkVersion 16
         targetSdkVersion 21
-        versionCode 3
-        versionName "0.3"
+        versionCode 4
+        versionName "0.4"
     }
     buildTypes {
         release {
