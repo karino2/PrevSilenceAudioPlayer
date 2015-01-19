@@ -19,6 +19,7 @@ import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import com.squareup.otto.Produce;
 import com.squareup.otto.Subscribe;
 
 import java.io.IOException;
@@ -536,6 +537,14 @@ public class PlayerService extends Service {
 
     private NotificationManager getNotificationManager() {
         return (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+    }
+
+    @Produce
+    public PlayPauseStateEvent producePlayPauseEvent() {
+        if((audioPlayer != null) && audioPlayer.isPlaying()) {
+            return PlayPauseStateEvent.createPlayStateEvent();
+        }
+        return PlayPauseStateEvent.createPauseStateEvent();
     }
 
     @Subscribe
