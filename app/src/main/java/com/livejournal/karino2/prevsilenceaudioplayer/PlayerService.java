@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.*;
 import android.os.Process;
@@ -295,23 +296,20 @@ public class PlayerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         audioPlayer.setContext(this);
         audioPlayer.setLastAudioPath(getLastFile());
-
         RemoteControlReceiver.ensureReceiverRegistered(this);
+
 
         if(notificationView == null)
         {
             showNotification();
         }
 
-            /*
 
             AudioManager am = (AudioManager)getSystemService(AUDIO_SERVICE);
-            */
-            /*
             int result = am.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
                                                   @Override
                                                   public void onAudioFocusChange(int focusChange) {
-
+                                                        Log.d("PrevSilence", "Focus changed: " + focusChange);
                                                   }
                                               },
                     // Use the music stream.
@@ -322,7 +320,6 @@ public class PlayerService extends Service {
             if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 showMessage("can't gain audio focus");
             }
-            */
 
 
         if (intent != null) {
