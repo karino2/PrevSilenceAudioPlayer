@@ -27,6 +27,8 @@ import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
 import com.squareup.otto.Subscribe;
 
+import java.io.File;
+
 
 public class PlayerActivity extends ActionBarActivity {
 
@@ -196,7 +198,17 @@ public class PlayerActivity extends ActionBarActivity {
         MediaMetadataRetriever metadataRetriever = new MediaMetadataRetriever();
         try {
             metadataRetriever.setDataSource(ctx, uri);
-            return metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+            String title =  metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+            if(title != null)
+                return title;
+
+            if(uri.getScheme().equals("file"))
+            {
+                File f = new File(uri.getPath());
+                return f.getName();
+            }
+
+            return "Unknown Title";
         } catch(java.lang.SecurityException se) {
             s_showMessage(ctx, "Fail to retrieve display name: " + se.getMessage());
             if (nullIfFail)
