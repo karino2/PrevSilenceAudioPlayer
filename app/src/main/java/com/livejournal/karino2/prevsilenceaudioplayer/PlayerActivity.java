@@ -101,7 +101,8 @@ public class PlayerActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        RemoteControlReceiver.ensureReceiverRegistered(this);
+        RemoteControlReceiver.registerReceiver(this);
+
 
         preferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override

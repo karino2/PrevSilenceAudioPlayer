@@ -296,7 +296,7 @@ public class PlayerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         audioPlayer.setContext(this);
         audioPlayer.setLastAudioPath(getLastFile());
-        RemoteControlReceiver.ensureReceiverRegistered(this);
+        RemoteControlReceiver.registerReceiver(this);
 
 
         if(notificationView == null)
@@ -323,7 +323,6 @@ public class PlayerService extends Service {
 
 
         if (intent != null) {
-            // RemoteControlReceiver.ensureReceiverRegistered(this);
             final String action = intent.getAction();
             if (ACTION_PLAY.equals(action)) {
                 handleActionPlay(intent.getStringExtra(EXTRA_PARAM_FILE_PATH));
@@ -344,8 +343,6 @@ public class PlayerService extends Service {
                 return START_STICKY;
             }
         }
-        // for recreate case. sometime static variable is not yet cleared, but media button receiver is unregistered. We register anyway.
-        // RemoteControlReceiver.forthRegisterReceiver(this);
         return START_STICKY;
     }
 

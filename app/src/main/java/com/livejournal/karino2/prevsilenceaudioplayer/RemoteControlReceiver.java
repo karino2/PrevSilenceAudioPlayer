@@ -10,31 +10,17 @@ import android.view.KeyEvent;
 import android.widget.Toast;
 
 public class RemoteControlReceiver extends BroadcastReceiver {
-    static boolean is_registerd = false;
     static ComponentName receiverName;
-    public static void ensureReceiverRegistered(Context context) {
-        if(!is_registerd) {
-            forthRegisterReceiver(context);
-        }
-    }
 
-    public static void forthRegisterReceiver(Context context) {
-        unregisterReceiver(context);
-
+    public static void registerReceiver(Context context) {
         AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         receiverName  = new ComponentName(context, RemoteControlReceiver.class);
-        ;
         am.registerMediaButtonEventReceiver(receiverName);
-        is_registerd = true;
     }
 
     public static void unregisterReceiver(Context context) {
-        if(is_registerd) {
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            am.unregisterMediaButtonEventReceiver(receiverName);
-            is_registerd = false;
-        }
-
+        AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        am.unregisterMediaButtonEventReceiver(receiverName);
     }
 
 
@@ -43,7 +29,7 @@ public class RemoteControlReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d("BlueTooth", "receive");
+        // Log.d("BlueTooth", "receive");
         if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
             KeyEvent event = (KeyEvent) intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
             // Log.d("BlueTooth", event.toString());
@@ -52,7 +38,7 @@ public class RemoteControlReceiver extends BroadcastReceiver {
             }
             if (KeyEvent.KEYCODE_MEDIA_PLAY == event.getKeyCode() ||
                     KeyEvent.KEYCODE_MEDIA_PAUSE == event.getKeyCode()) {
-                Log.d("BlueTooth", "Play or pause");
+                // Log.d("BlueTooth", "Play or pause");
                 PlayerService.startActionPlayOrPause(context, true);
                 abortBroadcast();
                 // showDebugMessage(context, "play or pause");
