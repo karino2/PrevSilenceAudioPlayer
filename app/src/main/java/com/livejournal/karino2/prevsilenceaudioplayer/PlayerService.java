@@ -304,7 +304,7 @@ public class PlayerService extends Service {
             showNotification();
         }
 
-
+/*
             AudioManager am = (AudioManager)getSystemService(AUDIO_SERVICE);
             int result = am.requestAudioFocus(new AudioManager.OnAudioFocusChangeListener() {
                                                   @Override
@@ -320,6 +320,7 @@ public class PlayerService extends Service {
             if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 showMessage("can't gain audio focus");
             }
+            */
 
 
         if (intent != null) {
