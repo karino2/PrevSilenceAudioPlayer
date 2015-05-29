@@ -35,6 +35,10 @@ public class AudioPlayer {
         playingState.gotoHead();
     }
 
+    public void finalizePlayer() {
+        playingState.finalizeState();
+    }
+
     public interface StateChangedListener {
         void requestRestart();
         void requestMediaButtonWait();

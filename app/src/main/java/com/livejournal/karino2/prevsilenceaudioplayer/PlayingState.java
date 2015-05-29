@@ -69,14 +69,26 @@ public class PlayingState {
         int channelConfiguration = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT) == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO;
 
         int minSize = AudioTrack.getMinBufferSize(sampleRate, channelConfiguration, AudioFormat.ENCODING_PCM_16BIT);
-        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelConfiguration,
-                AudioFormat.ENCODING_PCM_16BIT, minSize, AudioTrack.MODE_STREAM);
+        ensureAudioTrack(sampleRate, channelConfiguration, minSize);
 
 
         analyzer.setSampleRate(sampleRate);
         analyzer.setChannelNum(channelConfiguration == AudioFormat.CHANNEL_OUT_MONO ? 1 : 2);
 
         prevFormat = format;
+    }
+
+    private void ensureAudioTrack(int sampleRate, int channelConfiguration, int minSize) {
+        if(audioTrack != null) {
+            if(audioTrack.getSampleRate() == sampleRate
+                && audioTrack.getChannelConfiguration() == channelConfiguration
+                ) {
+                return;
+            }
+            audioTrack.release();
+        }
+        audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, channelConfiguration,
+                AudioFormat.ENCODING_PCM_16BIT, minSize, AudioTrack.MODE_STREAM);
     }
 
 
@@ -145,8 +157,7 @@ public class PlayingState {
             codec = null;
         }
         if(audioTrack != null) {
-            finalizeAudioTrack();
-            audioTrack = null;
+            audioTrack.flush();
         }
         playReady = false;
     }
@@ -264,7 +275,8 @@ public class PlayingState {
                 Log.d("PrevSilence", "output format has changed during skip, not supported. just ignore skip");
                 skipUntil = -1;
             }
-            finalizeAudioTrack();
+            if(audioTrack != null)
+                audioTrack.flush();
 
             long currentUS = analyzer.sampleCountToUS(currentPos);
             updateFormat(oformat);
@@ -295,5 +307,10 @@ public class PlayingState {
 
     public long getNextSilentEnd() {
         return analyzer.getNextSilentEnd();
+    }
+
+    public void finalizeState() {
+        if(audioTrack != null)
+            finalizeAudioTrack();
     }
 }

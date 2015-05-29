@@ -501,6 +501,9 @@ public class PlayerService extends Service {
     public void onDestroy() {
         BusProvider.getInstance().unregister(this);
         hideNotification();
+        if(audioPlayer != null) {
+            audioPlayer.finalizePlayer();
+        }
         super.onDestroy();
     }
 
