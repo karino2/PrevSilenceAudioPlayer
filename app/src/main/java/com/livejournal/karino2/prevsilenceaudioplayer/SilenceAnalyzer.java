@@ -39,6 +39,10 @@ public class SilenceAnalyzer {
         return channelNum;
     }
 
+    public long getLastAnalyzedUS() {
+        return lastAnalyzedUS;
+    }
+
     class SilentSection {
         public long begin;
         public long duration;

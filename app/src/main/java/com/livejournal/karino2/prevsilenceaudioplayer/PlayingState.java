@@ -293,6 +293,11 @@ public class PlayingState {
                 (format1.getInteger(MediaFormat.KEY_CHANNEL_COUNT) == format2.getInteger(MediaFormat.KEY_CHANNEL_COUNT));
     }
 
+    public long getDeltaFromCurrentUS(long deltaUS) {
+        long curUs = analyzer.sampleCountToUS(analyzer.getCurrent());
+        return Math.min(Math.max(0, curUs + deltaUS), analyzer.getLastAnalyzedUS());
+    }
+
     public long getCurrent() {
         return analyzer.getCurrent();
     }
@@ -312,5 +317,9 @@ public class PlayingState {
     public void finalizeState() {
         if(audioTrack != null)
             finalizeAudioTrack();
+    }
+
+    public long getLastAnalyzedCount() {
+        return analyzer.getLastAnalyzedUS();
     }
 }

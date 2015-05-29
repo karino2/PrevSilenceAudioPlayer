@@ -10,6 +10,8 @@ public class Command {
         PAUSE,
         NEXT,
         MEDIABUTTON_WAIT,
+        PREVIOUS_SEC,
+        NEXT_SEC,
         NEW_FILE
     }
     public static Command createCommand(CommandType typ) {

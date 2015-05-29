@@ -1,7 +1,6 @@
 package com.livejournal.karino2.prevsilenceaudioplayer;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,6 +36,15 @@ public class AudioPlayer {
 
     public void finalizePlayer() {
         playingState.finalizeState();
+    }
+
+
+    public void requestPrevSec() {
+        pushCommand(Command.CommandType.PREVIOUS_SEC);
+    }
+
+    public void requestNextSec() {
+        pushCommand(Command.CommandType.NEXT_SEC);
     }
 
     public interface StateChangedListener {
@@ -125,7 +133,7 @@ public class AudioPlayer {
         }
     }
 
-    long pendingSeekTo = -1;
+    long pendingSeekToUS = -1;
 
     public void play() throws IOException {
         isInsidePlayLoop = true;
@@ -134,11 +142,11 @@ public class AudioPlayer {
         try {
             playingState.ensurePrepare();
 
-            if(pendingSeekTo != -1)
+            if(pendingSeekToUS != -1)
             {
-                // Log.d("PrevSilence", "Prev: seekTo: " + pendingSeekTo);
-                playingState.seekTo(pendingSeekTo);
-                pendingSeekTo = -1;
+                // Log.d("PrevSilence", "Prev: seekTo: " + pendingSeekToUS);
+                playingState.seekTo(pendingSeekToUS);
+                pendingSeekToUS = -1;
             }
 
 
@@ -191,6 +199,12 @@ public class AudioPlayer {
                 handleToNextOutsideLoop();
                 // listener.requestNext();
                 return;
+            case PREVIOUS_SEC:
+                handleToPreviousSecOutsideLoop();
+                return;
+            case NEXT_SEC:
+                handleToNextSecOutsideLoop();
+                return;
         }
 
     }
@@ -206,15 +220,27 @@ public class AudioPlayer {
     }
 
     private void handleToPreviousOutsideLoop() {
-        pendingSeekTo = playingState.getPreviousSilentEnd();
-        // Log.d("PrevSilence", "Prev: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
+        pendingSeekToUS = playingState.getPreviousSilentEnd();
+        // pendingSeekToUS
+        // Log.d("PrevSilence", "Prev: get pendingSeekToUS: " + pendingSeekToUS + ", " + playingState.getCurrent());
         listener.requestRestart();
     }
 
     private void handleToNextOutsideLoop() {
-        pendingSeekTo = playingState.getNextSilentEnd();
-        // Log.d("PrevSilence", "Next: get pendingSeekTo: " + pendingSeekTo + ", " + playingState.getCurrent());
+        pendingSeekToUS = playingState.getNextSilentEnd();
+        // Log.d("PrevSilence", "Next: get pendingSeekToUS: " + pendingSeekToUS + ", " + playingState.getCurrent());
         listener.requestRestart();
     }
 
+    final long SMALL_JUMP_SEC = 1500;
+
+    private void handleToPreviousSecOutsideLoop() {
+        pendingSeekToUS = playingState.getDeltaFromCurrentUS(- SMALL_JUMP_SEC*1000);
+        listener.requestRestart();
+    }
+
+    private void handleToNextSecOutsideLoop() {
+        pendingSeekToUS = playingState.getDeltaFromCurrentUS(SMALL_JUMP_SEC*1000);
+        listener.requestRestart();
+    }
 }

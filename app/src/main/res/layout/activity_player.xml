@@ -21,6 +21,7 @@
         android:id="@+id/textViewName"
         android:layout_centerHorizontal="true"
         android:textSize="20dp" />
+
     <LinearLayout android:orientation="horizontal"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
@@ -58,5 +59,35 @@
         android:scaleType="centerInside" />
     </LinearLayout>
 
+    <LinearLayout android:orientation="horizontal"
+        android:layout_above="@id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+        <ImageButton
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:background="@android:color/transparent"
+            android:id="@+id/imageButtonPrevSec"
+            android:src="@drawable/button_prev_sec"
+            android:scaleType="centerInside" />
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"></LinearLayout>
+        <ImageButton
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:background="@android:color/transparent"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:id="@+id/imageButtonNextSec"
+            android:src="@drawable/button_next_sec"
+            android:scaleType="centerInside" />
+
+     </LinearLayout>
 
 </RelativeLayout>

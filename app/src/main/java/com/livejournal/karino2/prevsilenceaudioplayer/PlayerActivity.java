@@ -152,6 +152,21 @@ public class PlayerActivity extends ActionBarActivity {
             }
         });
 
+        findViewById(R.id.imageButtonPrevSec).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PlayerService.startActionPrevSec(PlayerActivity.this);
+            }
+        });
+
+        findViewById(R.id.imageButtonNextSec).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PlayerService.startActionNextSec(PlayerActivity.this);
+            }
+        });
+
+
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {

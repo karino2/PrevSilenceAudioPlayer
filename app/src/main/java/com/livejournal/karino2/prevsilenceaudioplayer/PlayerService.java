@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.media.AudioManager;
 import android.net.Uri;
 import android.os.*;
 import android.os.Process;
@@ -32,6 +31,8 @@ public class PlayerService extends Service {
     private static final String ACTION_NEXT = "com.livejournal.karino2.prevsilenceaudioplayer.action.NEXT";
     private static final String ACTION_QUIT = "com.livejournal.karino2.prevsilenceaudioplayer.action.QUIT";
     private static final String ACTION_TOGGLE_PAUSE = "com.livejournal.karino2.prevsilenceaudioplayer.action.TOGGLE_PAUSE";
+    private static final String ACTION_PREV_SEC = "com.livejournal.karino2.prevsilenceaudioplayer.action.PREV_SEC";
+    private static final String ACTION_NEXT_SEC = "com.livejournal.karino2.prevsilenceaudioplayer.action.NEXT_SEC";
 
     private static final String EXTRA_PARAM_FILE_PATH = "com.livejournal.karino2.prevsilenceaudioplayer.extra.PATH";
 
@@ -253,15 +254,24 @@ public class PlayerService extends Service {
     }
 
     public static void startActionQuit(Context context) {
-        Intent intent = s_createQuitIntent(context);
+        startWithAction(context, ACTION_QUIT);
+    }
+
+
+    public static void startActionPrevSec(Context context) {
+        startWithAction(context, ACTION_PREV_SEC);
+    }
+
+    public static void startWithAction(Context context, String action) {
+        Intent intent = new Intent(context, PlayerService.class);
+        intent.setAction(action);
         context.startService(intent);
     }
 
-    public static Intent s_createQuitIntent(Context context) {
-        Intent intent = new Intent(context, PlayerService.class);
-        intent.setAction(ACTION_QUIT);
-        return intent;
+    public static void startActionNextSec(Context context) {
+        startWithAction(context, ACTION_PREV_SEC);
     }
+
 
     public static void startActionNext(Context context, boolean withDelay) {
         Intent intent = s_createNextIntent(context);
@@ -342,6 +352,12 @@ public class PlayerService extends Service {
             } else if (ACTION_NEXT.equals(action)) {
                 handleActionNext(intent.getBooleanExtra("DELAY", false));
                 return START_STICKY;
+            } else if(ACTION_PREV_SEC.equals(action)) {
+                handleActionPrevSec();
+                return START_STICKY;
+            } else if(ACTION_NEXT_SEC.equals(action)) {
+                handleActionNextSec();
+                return START_STICKY;
             }
         }
         return START_STICKY;
@@ -384,6 +400,14 @@ public class PlayerService extends Service {
                 showMessage("Fail to setup previous file: " + e.getMessage());
             }
         }
+    }
+
+    private void handleActionPrevSec() {
+        audioPlayer.requestPrevSec();
+    }
+
+    private void handleActionNextSec() {
+        audioPlayer.requestNextSec();
     }
 
     @Override
@@ -575,7 +599,9 @@ public class PlayerService extends Service {
         String title = findDisplayNameFromUriStr(getLastFile());
 
         PendingIntent ppauseIntent = createPendingIntent(s_createTogglePauseIntent(this));
-        PendingIntent quitIntent = createPendingIntent(s_createQuitIntent(this));
+        Intent intent = new Intent(this, PlayerService.class);
+        intent.setAction(ACTION_QUIT);
+        PendingIntent quitIntent = createPendingIntent(intent);
         PendingIntent prevIntent = createPendingIntent(s_createPrevIntent(this));
         PendingIntent nextIntent = createPendingIntent(s_createNextIntent(this));
 
