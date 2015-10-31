@@ -232,7 +232,7 @@ public class AudioPlayer {
         listener.requestRestart();
     }
 
-    final long SMALL_JUMP_SEC = 1500;
+    final long SMALL_JUMP_SEC = 3000;
 
     private void handleToPreviousSecOutsideLoop() {
         pendingSeekToUS = playingState.getDeltaFromCurrentUS(- SMALL_JUMP_SEC*1000);
